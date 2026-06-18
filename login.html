@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - UniWash</title>
+  <meta name="description" content="Masuk ke sistem UniWash — platform laundry kampus terpercaya.">
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+
+  <div class="login-wrapper">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading">
+      <div class="spinner"></div>
+      <div style="font-weight: 600; color: var(--gray-900);" id="loading-text">Mengautentikasi...</div>
+    </div>
+
+    <!-- Header (selalu tampil) -->
+    <div class="brand">
+      <i class="ti ti-wash"></i> UniWash
+    </div>
+
+    <!-- ═══ VIEW 1: PILIH ROLE ═══ -->
+    <div class="view active" id="view-roles">
+      <div class="subtitle">
+        Pilih peran (role) Anda untuk masuk ke sistem.
+      </div>
+
+      <div class="role-grid">
+        <!-- Admin -->
+        <button class="role-btn" onclick="selectRole('admin')" id="role-btn-admin">
+          <div class="role-icon"><i class="ti ti-shield-lock"></i></div>
+          <div class="role-text">
+            <div class="role-title">Admin Laundry</div>
+            <div class="role-desc">Kelola pesanan, mitra &amp; kurir</div>
+          </div>
+          <i class="ti ti-chevron-right chevron"></i>
+        </button>
+
+        <!-- Customer -->
+        <button class="role-btn" onclick="selectRole('customer')" id="role-btn-customer">
+          <div class="role-icon"><i class="ti ti-user"></i></div>
+          <div class="role-text">
+            <div class="role-title">Pelanggan</div>
+            <div class="role-desc">Lacak pesanan &amp; pesan baru</div>
+          </div>
+          <i class="ti ti-chevron-right chevron"></i>
+        </button>
+
+        <!-- Mitra Laundry -->
+        <button class="role-btn" onclick="selectRole('partner')" id="role-btn-partner">
+          <div class="role-icon"><i class="ti ti-building-store"></i></div>
+          <div class="role-text">
+            <div class="role-title">Mitra Laundry</div>
+            <div class="role-desc">Terima &amp; kerjakan cucian</div>
+          </div>
+          <i class="ti ti-chevron-right chevron"></i>
+        </button>
+
+        <!-- Kurir -->
+        <button class="role-btn" onclick="selectRole('courier')" id="role-btn-courier">
+          <div class="role-icon"><i class="ti ti-bike"></i></div>
+          <div class="role-text">
+            <div class="role-title">Kurir Freelance</div>
+            <div class="role-desc">Ambil tugas penjemputan</div>
+          </div>
+          <i class="ti ti-chevron-right chevron"></i>
+        </button>
+      </div>
+
+      <div class="footer-text">
+        &copy; 2025 UniWash &middot; By <a href="#">Tim Pengembang</a>
+      </div>
+    </div>
+
+    <!-- ═══ VIEW 2: FORM LOGIN ═══ -->
+    <div class="view" id="view-login">
+      <button class="back-btn" onclick="showView('roles')">
+        <i class="ti ti-arrow-left"></i> Kembali pilih role
+      </button>
+
+      <div class="selected-role-badge" id="login-role-badge">
+        <i class="ti ti-user"></i>
+        <span id="login-role-label">Pelanggan</span>
+      </div>
+
+      <div class="login-title">Masuk ke Akun</div>
+      <div class="login-subtitle">Masukkan email dan password Anda.</div>
+
+      <!-- Error Message -->
+      <div class="error-msg" id="login-error">
+        <i class="ti ti-alert-circle"></i>
+        <span id="login-error-text">Email atau password salah.</span>
+      </div>
+
+      <form onsubmit="handleLogin(event)" id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email</label>
+          <div class="input-wrap">
+            <i class="ti ti-mail"></i>
+            <input type="email" id="login-email" placeholder="contoh@email.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <div class="input-wrap">
+            <i class="ti ti-lock"></i>
+            <input type="password" id="login-password" placeholder="Masukkan password" required
+              autocomplete="current-password">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('login-password', this)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btn-submit-login">
+          <i class="ti ti-login"></i> Masuk
+        </button>
+      </form>
+
+      <!-- Demo Hint -->
+      <div class="demo-hint" id="demo-hint">
+        <strong>💡 Demo Account:</strong>
+        Email: <code id="hint-email">admin@uniwash.id</code><br>
+        Password: <code id="hint-password">admin123</code>
+      </div>
+
+      <div class="switch-link">
+        Belum punya akun? <a onclick="showView('register')">Daftar di sini</a>
+      </div>
+    </div>
+
+    <!-- ═══ VIEW 3: FORM REGISTER ═══ -->
+    <div class="view" id="view-register">
+      <button class="back-btn" onclick="showView('login')">
+        <i class="ti ti-arrow-left"></i> Kembali ke login
+      </button>
+
+      <div class="selected-role-badge" id="register-role-badge">
+        <i class="ti ti-user"></i>
+        <span id="register-role-label">Pelanggan</span>
+      </div>
+
+      <div class="login-title">Buat Akun Baru</div>
+      <div class="login-subtitle">Isi data berikut untuk mendaftar.</div>
+
+      <!-- Error Message -->
+      <div class="error-msg" id="register-error">
+        <i class="ti ti-alert-circle"></i>
+        <span id="register-error-text">Terjadi kesalahan.</span>
+      </div>
+
+      <!-- Success Message -->
+      <div class="success-msg" id="register-success">
+        <i class="ti ti-check"></i>
+        <span id="register-success-text">Akun berhasil dibuat!</span>
+      </div>
+
+      <form onsubmit="handleRegister(event)" id="register-form">
+        <div class="form-group">
+          <label class="form-label" for="reg-name">Nama Lengkap</label>
+          <div class="input-wrap">
+            <i class="ti ti-user"></i>
+            <input type="text" id="reg-name" placeholder="Nama lengkap Anda" required minlength="2">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email</label>
+          <div class="input-wrap">
+            <i class="ti ti-mail"></i>
+            <input type="email" id="reg-email" placeholder="contoh@email.com" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Password</label>
+          <div class="input-wrap">
+            <i class="ti ti-lock"></i>
+            <input type="password" id="reg-password" placeholder="Minimal 6 karakter" required minlength="6">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('reg-password', this)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btn-submit-register">
+          <i class="ti ti-user-plus"></i> Daftar Sekarang
+        </button>
+      </form>
+
+      <div class="switch-link">
+        Sudah punya akun? <a onclick="showView('login')">Masuk di sini</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Auth & DB Module -->
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+
+  <script>
+    // ─── STATE ───
+    let currentRole = '';
+
+    const ROLE_CONFIG = {
+      admin: { label: 'Admin Laundry', icon: 'ti-shield-lock', email: 'admin@uniwash.id', password: 'admin123', redirect: 'uniwash_ui_demo.html', loadText: 'Memuat Dashboard Admin...' },
+      customer: { label: 'Pelanggan', icon: 'ti-user', email: 'rina@email.com', password: 'customer123', redirect: 'customer.html', loadText: 'Memuat Halaman Pelanggan...' },
+      partner: { label: 'Mitra Laundry', icon: 'ti-building-store', email: 'busiti@mitra.id', password: 'mitra123', redirect: 'partner.html', loadText: 'Memuat Dashboard Mitra...' },
+      courier: { label: 'Kurir Freelance', icon: 'ti-bike', email: 'ahmad@kurir.id', password: 'kurir123', redirect: 'courier.html', loadText: 'Memuat Aplikasi Kurir...' }
+    };
+
+    // ─── INIT: Redirect jika sudah login ───
+    AuthManager.redirectIfLoggedIn();
+
+    // ─── VIEW SWITCHING ───
+    function showView(view) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + (view === 'roles' ? 'roles' : view)).classList.add('active');
+
+      // Reset errors
+      hideError('login');
+      hideError('register');
+      hideSuccess('register');
+    }
+
+    // ─── ROLE SELECTION ───
+    function selectRole(role) {
+      currentRole = role;
+      const config = ROLE_CONFIG[role];
+
+      // Update login view
+      document.getElementById('login-role-badge').innerHTML =
+        `<i class="ti ${config.icon}"></i><span>${config.label}</span>`;
+      document.getElementById('hint-email').textContent = config.email;
+      document.getElementById('hint-password').textContent = config.password;
+
+      // Update register view
+      document.getElementById('register-role-badge').innerHTML =
+        `<i class="ti ${config.icon}"></i><span>${config.label}</span>`;
+
+      // Pre-fill email for convenience
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
+
+      // Clear register form
+      document.getElementById('register-form').reset();
+
+      // Show login form
+      showView('login');
+
+      // Auto-focus email
+      setTimeout(() => document.getElementById('login-email').focus(), 350);
+    }
+
+    // ─── HANDLE LOGIN ───
+    function handleLogin(e) {
+      e.preventDefault();
+      hideError('login');
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const btn = document.getElementById('btn-submit-login');
+
+      // Disable button + show loading
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner-sm"></div> Memproses...';
+
+      // Simulate slight delay for UX
+      setTimeout(async () => {
+        const result = await AuthManager.login(email, password, currentRole);
+
+        if (result.success) {
+          // Show loading overlay
+          const config = ROLE_CONFIG[currentRole];
+          document.getElementById('loading-text').textContent = config.loadText;
+          document.getElementById('loading').classList.add('active');
+
+          // Redirect
+          setTimeout(() => {
+            window.location.href = config.redirect;
+          }, 1200);
+        } else {
+          showError('login', result.error);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ti ti-login"></i> Masuk';
+        }
+      }, 600);
+    }
+
+    // ─── HANDLE REGISTER ───
+    function handleRegister(e) {
+      e.preventDefault();
+      hideError('register');
+      hideSuccess('register');
+
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const btn = document.getElementById('btn-submit-register');
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner-sm"></div> Mendaftarkan...';
+
+      setTimeout(async () => {
+        const result = await AuthManager.register(name, email, password, currentRole);
+
+        if (result.success) {
+          showSuccess('register', `Akun berhasil dibuat! Silakan login dengan email ${email}.`);
+          document.getElementById('register-form').reset();
+
+          // Auto-switch to login after 2s
+          setTimeout(() => showView('login'), 2000);
+        } else {
+          showError('register', result.error);
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-user-plus"></i> Daftar Sekarang';
+      }, 600);
+    }
+
+    // ─── ERROR / SUCCESS HELPERS ───
+    function showError(prefix, msg) {
+      const el = document.getElementById(prefix + '-error');
+      el.querySelector('span').textContent = msg;
+      el.classList.add('show');
+    }
+
+    function hideError(prefix) {
+      document.getElementById(prefix + '-error').classList.remove('show');
+    }
+
+    function showSuccess(prefix, msg) {
+      const el = document.getElementById(prefix + '-success');
+      el.querySelector('span').textContent = msg;
+      el.classList.add('show');
+    }
+
+    function hideSuccess(prefix) {
+      const el = document.getElementById(prefix + '-success');
+      if (el) el.classList.remove('show');
+    }
+
+    // ─── PASSWORD TOGGLE ───
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'ti ti-eye-off';
+      } else {
+        input.type = 'password';
+        icon.className = 'ti ti-eye';
+      }
+    }
+  </script>
+
+</body>
+
+</html>

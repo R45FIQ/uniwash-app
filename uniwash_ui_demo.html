@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniWash — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="admin.css">
+
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Auth & DB Module -->
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+</head>
+
+<body>
+
+  <script>
+    // Route Protection: hanya admin yang boleh akses
+    const currentUser = AuthManager.requireAuth(['admin']);
+  </script>
+
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <i class="ti ti-wash"></i> UniWash
+      <span class="admin-chip">Admin</span>
+    </div>
+
+    <div class="sidebar-section">Utama</div>
+    <button class="nav-item active" onclick="goPage('overview')">
+      <i class="ti ti-layout-dashboard"></i> Overview
+    </button>
+    <button class="nav-item" onclick="goPage('orders')">
+      <i class="ti ti-clipboard-list"></i> Kelola Order
+      <span class="nav-badge" id="nb-orders">7</span>
+    </button>
+    <button class="nav-item" onclick="goPage('couriers')">
+      <i class="ti ti-bike"></i> Kurir
+      <span class="nav-badge amber" id="nb-couriers">1</span>
+    </button>
+    <button class="nav-item" onclick="goPage('partners')">
+      <i class="ti ti-building-store"></i> Mitra Laundry
+    </button>
+
+    <div class="sidebar-section">Keuangan</div>
+    <button class="nav-item" onclick="goPage('finance')">
+      <i class="ti ti-chart-bar"></i> Laporan Finansial
+    </button>
+
+    <div class="sidebar-section">Sistem</div>
+    <button class="nav-item" onclick="goPage('firebase')">
+      <i class="ti ti-database"></i> Setup Firebase
+    </button>
+    <button class="nav-item" onclick="goPage('settings')">
+      <i class="ti ti-settings"></i> Pengaturan
+    </button>
+
+    <div class="sidebar-footer">
+      <div class="avatar-sm" id="admin-avatar">SR</div>
+      <div>
+        <div class="avatar-name" id="admin-name">Admin</div>
+        <div class="avatar-role">Administrator</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:center;">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+        <div class="topbar-title" id="topbar-title">Overview</div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" title="Notifikasi">
+          <i class="ti ti-bell" style="font-size:16px"></i>
+          <span class="notif-dot"></span>
+        </button>
+        <button class="icon-btn" title="Refresh data" onclick="showToast('Data diperbarui','success')">
+          <i class="ti ti-refresh" style="font-size:16px"></i>
+        </button>
+        <button class="icon-btn" title="Keluar" onclick="AuthManager.logout()">
+          <i class="ti ti-logout" style="font-size:16px; color:#EF4444"></i>
+        </button>
+        <div class="chip"><i class="ti ti-circle-dot" style="color:#22c55e"></i> Live</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ══════════════════════════════ PAGE: OVERVIEW ══ -->
+      <div id="page-overview" class="page active">
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card green">
+            <div class="stat-icon green"><i class="ti ti-clipboard-list"></i></div>
+            <div class="stat-val">7</div>
+            <div class="stat-label">Order aktif hari ini</div>
+            <div class="stat-delta up"><i class="ti ti-trending-up"></i> +3 dari kemarin</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon amber"><i class="ti ti-clock"></i></div>
+            <div class="stat-val">2</div>
+            <div class="stat-label">Menunggu kurir</div>
+            <div class="stat-delta down"><i class="ti ti-alert-circle"></i> Butuh assign</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="ti ti-currency-dollar"></i></div>
+            <div class="stat-val">Rp 161rb</div>
+            <div class="stat-label">Pendapatan hari ini</div>
+            <div class="stat-delta up"><i class="ti ti-trending-up"></i> +Rp 23rb</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="ti ti-users"></i></div>
+            <div class="stat-val">48</div>
+            <div class="stat-label">Pengguna aktif bulan ini</div>
+            <div class="stat-delta up"><i class="ti ti-trending-up"></i> Target: 50</div>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-row">
+          <div class="metric-item">
+            <div class="metric-label">Order bulan ini</div>
+            <div class="metric-val">96</div>
+            <div class="metric-sub">Target 100 order</div>
+            <div class="progress-bar" style="margin-top:8px">
+              <div class="progress-fill" style="width:96%"></div>
+            </div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Revenue bulan ini</div>
+            <div class="metric-val">Rp 1,73jt</div>
+            <div class="metric-sub">Target Rp 1,8jt</div>
+            <div class="progress-bar" style="margin-top:8px">
+              <div class="progress-fill amber" style="width:73%"></div>
+            </div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Avg rating kurir</div>
+            <div class="metric-val">4.8 ★</div>
+            <div class="metric-sub">Dari 34 ulasan</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Tingkat selesai</div>
+            <div class="metric-val">97%</div>
+            <div class="metric-sub">0 order dibatalkan</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">LTV / CAC rasio</div>
+            <div class="metric-val">8 : 1</div>
+            <div class="metric-sub">Sehat (≥3:1)</div>
+          </div>
+        </div>
+
+        <!-- Order terbaru + Kurir aktif -->
+        <div class="grid2">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Order terbaru</span>
+              <button class="btn btn-outline btn-sm" onclick="goPage('orders')"><i class="ti ti-arrow-right"></i> Lihat
+                semua</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Pelanggan</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="order-id">#LK-2406-0047</span></td>
+                    <td>M. Sulaiman</td>
+                    <td><span class="badge badge-amber"><i class="ti ti-wash"></i> Dicuci</span></td>
+                    <td>Rp 23.000</td>
+                  </tr>
+                  <tr>
+                    <td><span class="order-id">#LK-2406-0046</span></td>
+                    <td>Rina Aulia</td>
+                    <td><span class="badge badge-blue"><i class="ti ti-truck-delivery"></i> Diantar</span></td>
+                    <td>Rp 17.000</td>
+                  </tr>
+                  <tr>
+                    <td><span class="order-id">#LK-2406-0045</span></td>
+                    <td>Dimas Cahyo</td>
+                    <td><span class="badge badge-gray"><i class="ti ti-clock"></i> Antri</span></td>
+                    <td>Rp 30.000</td>
+                  </tr>
+                  <tr>
+                    <td><span class="order-id">#LK-2406-0044</span></td>
+                    <td>Laily Nur</td>
+                    <td><span class="badge badge-green"><i class="ti ti-check"></i> Selesai</span></td>
+                    <td>Rp 18.000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Status kurir aktif</span>
+              <button class="btn btn-outline btn-sm" onclick="goPage('couriers')"><i class="ti ti-arrow-right"></i>
+                Kelola</button>
+            </div>
+            <div class="card-body" style="padding-top:12px">
+              <div class="kurir-item" style="cursor:default;border-color:var(--green-300);background:var(--green-50)">
+                <div class="avatar-sm">AR</div>
+                <div class="kurir-info">
+                  <div class="kurir-name">Ahmad Rifai</div>
+                  <div class="kurir-meta">Sedang antar — #LK-2406-0046</div>
+                </div>
+                <span class="badge badge-green"><i class="ti ti-circle-dot"></i> Aktif</span>
+              </div>
+              <div class="kurir-item" style="cursor:default">
+                <div class="avatar-sm" style="background:#EDE9FE;color:#7C3AED">BW</div>
+                <div class="kurir-info">
+                  <div class="kurir-name">Budi Wicaksono</div>
+                  <div class="kurir-meta">Standby · Siap menerima order</div>
+                </div>
+                <span class="badge badge-gray">Standby</span>
+              </div>
+              <div class="kurir-item" style="cursor:default">
+                <div class="avatar-sm" style="background:var(--amber-100);color:var(--amber-600)">FS</div>
+                <div class="kurir-info">
+                  <div class="kurir-name">Fariz Setiawan</div>
+                  <div class="kurir-meta">Sedang jemput — #LK-2406-0047</div>
+                </div>
+                <span class="badge badge-amber"><i class="ti ti-map-pin"></i> Jemput</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ PAGE: ORDERS ══ -->
+      <div id="page-orders" class="page">
+        <div class="card">
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="filterOrders('all',this)">Semua <span class="badge badge-gray"
+                style="margin-left:4px;font-size:10px">7</span></button>
+            <button class="tab-btn" onclick="filterOrders('antri',this)">Antri <span class="badge badge-gray"
+                style="margin-left:4px;font-size:10px">2</span></button>
+            <button class="tab-btn" onclick="filterOrders('proses',this)">Proses <span class="badge badge-amber"
+                style="margin-left:4px;font-size:10px">3</span></button>
+            <button class="tab-btn" onclick="filterOrders('diantar',this)">Diantar <span class="badge badge-blue"
+                style="margin-left:4px;font-size:10px">1</span></button>
+            <button class="tab-btn" onclick="filterOrders('selesai',this)">Selesai <span class="badge badge-green"
+                style="margin-left:4px;font-size:10px">1</span></button>
+          </div>
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <i class="ti ti-search"></i>
+              <input class="search-input" placeholder="Cari order ID atau nama…" oninput="searchOrders(this.value)">
+            </div>
+            <select class="filter-select" onchange="filterByService(this.value)">
+              <option value="">Semua layanan</option>
+              <option value="Reguler">Reguler</option>
+              <option value="Ekspres">Ekspres</option>
+              <option value="Bundel">Bundel 4x</option>
+            </select>
+            <select class="filter-select" onchange="filterByPartner(this.value)">
+              <option value="">Semua mitra</option>
+              <option value="Bu Siti">Bu Siti – Tlogomas</option>
+              <option value="Pak Heru">Pak Heru – Dinoyo</option>
+            </select>
+            <div class="ml-auto">
+              <button class="btn btn-primary" onclick="openNewOrderModal()"><i class="ti ti-plus"></i> Order
+                baru</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Pelanggan</th>
+                  <th>Layanan</th>
+                  <th>Berat</th>
+                  <th>Total</th>
+                  <th>Kurir</th>
+                  <th>Mitra</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="orders-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ PAGE: COURIERS ══ -->
+      <div id="page-couriers" class="page">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <span class="card-title">Daftar Kurir Freelance</span>
+            <button class="btn btn-primary" onclick="openAddCourierModal()"><i class="ti ti-plus"></i> Tambah
+              kurir</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>No. HP</th>
+                  <th>Order hari ini</th>
+                  <th>Total order</th>
+                  <th>Rating</th>
+                  <th>Fee hari ini</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="couriers-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Rekap fee kurir — Juni 2025</span></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+              <div style="background:var(--gray-50);border:var(--border);border-radius:var(--radius-md);padding:14px">
+                <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px">Total fee terbayar</div>
+                <div style="font-size:20px;font-weight:600;color:var(--green-600)">Rp 870.000</div>
+                <div style="font-size:11px;color:var(--gray-500)">87 trip × Rp 10.000</div>
+              </div>
+              <div style="background:var(--gray-50);border:var(--border);border-radius:var(--radius-md);padding:14px">
+                <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px">Trip selesai bulan ini</div>
+                <div style="font-size:20px;font-weight:600">172</div>
+                <div style="font-size:11px;color:var(--gray-500)">Pickup + delivery</div>
+              </div>
+              <div style="background:var(--gray-50);border:var(--border);border-radius:var(--radius-md);padding:14px">
+                <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px">Kurir aktif</div>
+                <div style="font-size:20px;font-weight:600">3</div>
+                <div style="font-size:11px;color:var(--gray-500)">dari 3 terdaftar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ PAGE: PARTNERS ══ -->
+      <div id="page-partners" class="page">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <span class="card-title">Mitra Laundry</span>
+            <button class="btn btn-primary" onclick="openAddPartnerModal()"><i class="ti ti-plus"></i> Tambah
+              mitra</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama Mitra</th>
+                  <th>Alamat</th>
+                  <th>Kapasitas/hari</th>
+                  <th>Komisi</th>
+                  <th>Order bulan ini</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="partners-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Komisi mitra — Juni 2025</span></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:13px;font-weight:500">Laundry Bu Siti</div>
+                  <div style="font-size:11px;color:var(--gray-500)">72 order × rata-rata Rp 18.000 × 15%</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-weight:600;color:var(--amber-600)">Rp 194.400</div>
+                  <div style="font-size:11px;color:var(--gray-500)">Wajib dibayar</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:13px;font-weight:500">Laundry Pak Heru</div>
+                  <div style="font-size:11px;color:var(--gray-500)">24 order × rata-rata Rp 18.000 × 18%</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-weight:600;color:var(--amber-600)">Rp 77.760</div>
+                  <div style="font-size:11px;color:var(--gray-500)">Wajib dibayar</div>
+                </div>
+              </div>
+              <hr style="border:none;border-top:var(--border)">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-weight:600">Total komisi bulan ini</div>
+                <div style="font-weight:600;font-size:16px;color:var(--red-600)">Rp 272.160</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ PAGE: FINANCE ══ -->
+      <div id="page-finance" class="page">
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card green">
+            <div class="stat-icon green"><i class="ti ti-trending-up"></i></div>
+            <div class="stat-val">Rp 1,73jt</div>
+            <div class="stat-label">Revenue kotor bulan ini</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon amber"><i class="ti ti-trending-down"></i></div>
+            <div class="stat-val">Rp 1,3jt</div>
+            <div class="stat-label">Total OPEX bulan ini</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="ti ti-coin"></i></div>
+            <div class="stat-val">Rp 430rb</div>
+            <div class="stat-label">Laba bersih estimasi</div>
+            <div class="stat-delta up"><i class="ti ti-trending-up"></i> Profit margin 24%</div>
+          </div>
+        </div>
+
+        <div class="grid2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Rincian pendapatan</span></div>
+            <div class="card-body" style="padding:0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Sumber</th>
+                    <th>Jumlah</th>
+                    <th>Nilai</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Komisi order reguler (80 order × Rp 18rb)</td>
+                    <td>80 order</td>
+                    <td style="font-weight:500;color:var(--green-600)">Rp 1.440.000</td>
+                  </tr>
+                  <tr>
+                    <td>Fee pick-up & delivery (96 × Rp 5rb)</td>
+                    <td>96 trip</td>
+                    <td style="font-weight:500;color:var(--green-600)">Rp 480.000</td>
+                  </tr>
+                  <tr>
+                    <td>Paket bundel 4x (2 pelanggan)</td>
+                    <td>2 paket</td>
+                    <td style="font-weight:500;color:var(--green-600)">Rp 120.000</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600">Total</td>
+                    <td></td>
+                    <td style="font-weight:600;font-size:14px">Rp 2.040.000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Rincian pengeluaran (OPEX)</span></div>
+            <div class="card-body" style="padding:0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Komponen</th>
+                    <th>Nilai</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Fee kurir (172 trip × Rp 5.000)</td>
+                    <td style="color:var(--red-600)">Rp 860.000</td>
+                  </tr>
+                  <tr>
+                    <td>Komisi mitra laundry</td>
+                    <td style="color:var(--red-600)">Rp 272.160</td>
+                  </tr>
+                  <tr>
+                    <td>Hosting server (VPS)</td>
+                    <td style="color:var(--red-600)">Rp 50.000</td>
+                  </tr>
+                  <tr>
+                    <td>Pulsa/kuota operasional</td>
+                    <td style="color:var(--red-600)">Rp 100.000</td>
+                  </tr>
+                  <tr>
+                    <td>Marketing konten</td>
+                    <td style="color:var(--red-600)">Rp 100.000</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600">Total OPEX</td>
+                    <td style="font-weight:600;font-size:14px;color:var(--red-600)">Rp 1.382.160</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Unit economics — sesuai laporan</span></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+              <div
+                style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius-md);padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--green-600);font-weight:600;margin-bottom:6px">CAC</div>
+                <div style="font-size:22px;font-weight:600">Rp 9rb</div>
+                <div style="font-size:11px;color:var(--gray-500)">Biaya akuisisi per user</div>
+              </div>
+              <div
+                style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius-md);padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--green-600);font-weight:600;margin-bottom:6px">LTV</div>
+                <div style="font-size:22px;font-weight:600">Rp 72rb</div>
+                <div style="font-size:11px;color:var(--gray-500)">Per user selama 10 bulan</div>
+              </div>
+              <div
+                style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius-md);padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--green-600);font-weight:600;margin-bottom:6px">LTV : CAC</div>
+                <div style="font-size:22px;font-weight:600">8 : 1</div>
+                <div style="font-size:11px;color:var(--gray-500)">Sehat (standar ≥3:1)</div>
+              </div>
+              <div
+                style="background:var(--green-50);border:1px solid var(--green-100);border-radius:var(--radius-md);padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--green-600);font-weight:600;margin-bottom:6px">AOV</div>
+                <div style="font-size:22px;font-weight:600">Rp 18rb</div>
+                <div style="font-size:11px;color:var(--gray-500)">Rata-rata per order</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ PAGE: FIREBASE SETUP ══ -->
+      <div id="page-firebase" class="page">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><span class="card-title">🔥 Panduan Integrasi Firebase</span></div>
+          <div class="card-body">
+            <div class="firebase-box">
+              <i class="ti ti-info-circle"></i>
+              <div>
+                <strong>Mengapa Firebase?</strong> Gratis sampai 50k reads/hari, real-time by default, auth bawaan, dan
+                tidak butuh backend server — cocok untuk skala awal UniWash (target 50–200 user).
+              </div>
+            </div>
+
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px">1. Install Firebase SDK</div>
+            <div class="firebase-code">&lt;!-- Tambahkan di &lt;head&gt; file HTML kamu --&gt;
+              &lt;script type="module"&gt;
+              import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+              import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+              import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+              const firebaseConfig = {
+              apiKey: "YOUR_API_KEY",
+              authDomain: "uniwash.firebaseapp.com",
+              projectId: "uniwash",
+              storageBucket: "uniwash.appspot.com",
+              messagingSenderId: "YOUR_SENDER_ID",
+              appId: "YOUR_APP_ID"
+              };
+
+              const app = initializeApp(firebaseConfig);
+              const db = getFirestore(app);
+              const auth = getAuth(app);
+              &lt;/script&gt;</div>
+
+            <div style="font-size:13px;font-weight:600;margin:16px 0 8px">2. Struktur Firestore yang direkomendasikan
+            </div>
+            <div class="firebase-code">// Koleksi utama UniWash:
+
+              orders/ ← semua order
+              {orderId}/
+              userId, kurirId, mitraid
+              status: "antri" | "dijemput" | "dicuci" | "dikeringkan" | "diantar" | "selesai"
+              service: "reguler" | "ekspres" | "bundel"
+              weightKg, totalPrice
+              pickupAddress, pickupTime
+              createdAt, updatedAt
+
+              users/ ← pelanggan
+              {userId}/
+              name, email, phone
+              kost: { name, address, room }
+              activeBundle: { quota, used, expiresAt }
+
+              couriers/ ← kurir freelance
+              {kurirId}/
+              name, phone, status: "aktif"|"standby"|"jemput"
+              totalTrips, rating
+
+              partners/ ← mitra laundry
+              {partnerId}/
+              name, address, capacityKgPerDay, commissionPct</div>
+
+            <div style="font-size:13px;font-weight:600;margin:16px 0 8px">3. Contoh: simpan order baru ke Firestore
+            </div>
+            <div class="firebase-code">import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+              async function createOrder(orderData) {
+              try {
+              const docRef = await addDoc(collection(db, "orders"), {
+              ...orderData,
+              status: "antri",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+              });
+              console.log("Order tersimpan, ID:", docRef.id);
+              return docRef.id;
+              } catch (e) {
+              console.error("Gagal simpan order:", e);
+              }
+              }</div>
+
+            <div style="font-size:13px;font-weight:600;margin:16px 0 8px">4. Real-time listener — status order langsung
+              update</div>
+            <div class="firebase-code">import { doc, onSnapshot } from "firebase/firestore";
+
+              // Di halaman tracking pelanggan:
+              function listenOrder(orderId) {
+              const unsub = onSnapshot(doc(db, "orders", orderId), (snap) => {
+              if (snap.exists()) {
+              const order = snap.data();
+              updateTrackingUI(order.status); // update UI langsung tanpa reload
+              }
+              });
+              return unsub; // panggil unsub() untuk stop listening
+              }</div>
+
+            <div style="font-size:13px;font-weight:600;margin:16px 0 8px">5. Security Rules Firestore (salin ke Firebase
+              Console)</div>
+            <div class="firebase-code">rules_version = '2';
+              service cloud.firestore {
+              match /databases/{database}/documents {
+
+              // Order: user hanya bisa baca order miliknya sendiri
+              match /orders/{orderId} {
+              allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+              allow write: if request.auth != null;
+              }
+
+              // Admin bisa baca semua
+              match /{document=**} {
+              allow read, write: if request.auth.token.admin == true;
+              }
+              }
+              }</div>
+
+            <div style="margin-top:16px;display:flex;gap:10px">
+              <a href="https://console.firebase.google.com" target="_blank" class="btn btn-primary"><i
+                  class="ti ti-external-link"></i> Buka Firebase Console</a>
+              <a href="https://firebase.google.com/docs/firestore" target="_blank" class="btn btn-outline"><i
+                  class="ti ti-book"></i> Dokumentasi Firestore</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ PAGE: SETTINGS ══ -->
+      <div id="page-settings" class="page">
+        <div class="card" style="max-width:520px">
+          <div class="card-header"><span class="card-title">Pengaturan Layanan</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Harga Reguler (Rp/kg)</label>
+              <input class="form-control" type="number" value="6000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Harga Ekspres (Rp/kg)</label>
+              <input class="form-control" type="number" value="8000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Harga Bundel 4x (Rp/bulan)</label>
+              <input class="form-control" type="number" value="60000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Biaya antar-jemput (Rp/order)</label>
+              <input class="form-control" type="number" value="5000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Zona layanan aktif</label>
+              <input class="form-control" type="text" value="Radius 3 km dari UMM Tlogomas">
+            </div>
+            <button class="btn btn-primary" onclick="showToast('Pengaturan tersimpan','success')"><i
+                class="ti ti-check"></i> Simpan pengaturan</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <!-- ══ MODAL: ASSIGN KURIR ══ -->
+  <div class="modal-overlay" id="modal-assign">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Assign kurir ke order</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px" id="modal-order-id"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-assign')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px;font-weight:500;color:var(--gray-700);margin-bottom:10px">Pilih kurir tersedia:</div>
+        <div id="kurir-list">
+          <div class="kurir-item" onclick="selectKurir(this,'AR','Ahmad Rifai')">
+            <div class="avatar-sm">AR</div>
+            <div class="kurir-info">
+              <div class="kurir-name">Ahmad Rifai</div>
+              <div class="kurir-meta">2 order aktif · ⭐ 4.9</div>
+            </div>
+            <span class="badge badge-green">Aktif</span>
+            <i class="ti ti-check kurir-check" style="font-size:18px"></i>
+          </div>
+          <div class="kurir-item" onclick="selectKurir(this,'BW','Budi Wicaksono')">
+            <div class="avatar-sm" style="background:#EDE9FE;color:#7C3AED">BW</div>
+            <div class="kurir-info">
+              <div class="kurir-name">Budi Wicaksono</div>
+              <div class="kurir-meta">0 order aktif · ⭐ 4.7 — Standby</div>
+            </div>
+            <span class="badge badge-gray">Standby</span>
+            <i class="ti ti-check kurir-check" style="font-size:18px"></i>
+          </div>
+          <div class="kurir-item" onclick="selectKurir(this,'FS','Fariz Setiawan')">
+            <div class="avatar-sm" style="background:var(--amber-100);color:var(--amber-600)">FS</div>
+            <div class="kurir-info">
+              <div class="kurir-name">Fariz Setiawan</div>
+              <div class="kurir-meta">1 order aktif · ⭐ 4.6</div>
+            </div>
+            <span class="badge badge-amber">Jemput</span>
+            <i class="ti ti-check kurir-check" style="font-size:18px"></i>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-assign')">Batal</button>
+        <button class="btn btn-primary" id="btn-confirm-assign" onclick="confirmAssign()"><i class="ti ti-check"></i>
+          Konfirmasi assign</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: UPDATE STATUS ══ -->
+  <div class="modal-overlay" id="modal-status">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Update status order</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px" id="modal-status-order-id"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-status')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Status baru</label>
+          <select class="form-control" id="new-status-select">
+            <option value="antri">⏳ Antri</option>
+            <option value="dijemput">🛵 Dijemput kurir</option>
+            <option value="dicuci">🧺 Sedang dicuci</option>
+            <option value="dikeringkan">💨 Sedang dikeringkan</option>
+            <option value="diantar">🚚 Sedang diantar</option>
+            <option value="selesai">✅ Selesai</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catatan (opsional)</label>
+          <input class="form-control" placeholder="Mis: sudah ditimbang 3.2 kg">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-status')">Batal</button>
+        <button class="btn btn-primary" onclick="confirmStatusUpdate()"><i class="ti ti-refresh"></i> Update
+          status</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: NEW ORDER ══ -->
+  <div class="modal-overlay" id="modal-new-order">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Buat Order Baru</div>
+        <button class="modal-close" onclick="closeModal('modal-new-order')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Pelanggan</label>
+          <input class="form-control" id="new-order-name" placeholder="Mis: Budi Santoso">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Layanan</label>
+          <select class="form-control" id="new-order-service">
+            <option value="Reguler">Reguler (Rp 6.000/kg)</option>
+            <option value="Ekspres">Ekspres (Rp 8.000/kg)</option>
+            <option value="Bundel">Bundel 4x (Rp 60.000)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mitra Laundry</label>
+          <select class="form-control" id="new-order-partner">
+            <option value="Bu Siti">Laundry Bu Siti</option>
+            <option value="Pak Heru">Laundry Pak Heru</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Berat Estimasi (kg)</label>
+          <input class="form-control" type="number" id="new-order-weight" placeholder="Mis: 3">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-new-order')">Batal</button>
+        <button class="btn btn-primary" onclick="confirmNewOrder()"><i class="ti ti-check"></i> Simpan Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: ADD / EDIT COURIER ══ -->
+  <div class="modal-overlay" id="modal-add-courier">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="courier-modal-title">Tambah Kurir Freelance</div>
+        <button class="modal-close" onclick="closeModal('modal-add-courier')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input class="form-control" id="courier-name" placeholder="Mis: Joko Anwar">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nomor WhatsApp</label>
+          <input class="form-control" id="courier-phone" placeholder="Mis: 0812-xxxx-xxxx">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-add-courier')">Batal</button>
+        <button class="btn btn-primary" onclick="confirmAddCourier()"><i class="ti ti-check"></i> Simpan Kurir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: ADD PARTNER ══ -->
+  <div class="modal-overlay" id="modal-add-partner">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Tambah Mitra Laundry</div>
+        <button class="modal-close" onclick="closeModal('modal-add-partner')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Mitra / Laundry</label>
+          <input class="form-control" id="partner-name" placeholder="Mis: Laundry Berkah">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Alamat Lengkap</label>
+          <input class="form-control" id="partner-address" placeholder="Mis: Jl. Mawar No. 12">
+        </div>
+        <div class="grid2" style="margin-bottom:14px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Kapasitas/hari (kg)</label>
+            <input class="form-control" type="number" id="partner-capacity" placeholder="Mis: 50">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Komisi (%)</label>
+            <input class="form-control" type="number" id="partner-commission" placeholder="Mis: 15">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-add-partner')">Batal</button>
+        <button class="btn btn-primary" onclick="confirmAddPartner()"><i class="ti ti-check"></i> Simpan Mitra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: PARTNER DETAIL ══ -->
+  <div class="modal-overlay" id="modal-partner-detail">
+    <div class="modal" style="width: 380px;">
+      <div class="modal-header">
+        <div class="modal-title">Detail Mitra</div>
+        <button class="modal-close" onclick="closeModal('modal-partner-detail')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div class="avatar-sm"
+            style="width:50px;height:50px;font-size:20px;margin:0 auto 10px;background:var(--blue-100);color:var(--blue-600)">
+            <i class="ti ti-building-store"></i></div>
+          <div style="font-size: 15px; font-weight: 600;" id="detail-partner-name">Laundry Bu Siti</div>
+          <div style="font-size: 12px; color: var(--gray-500);"><i class="ti ti-map-pin"></i> <span
+              id="detail-partner-address">Jl. Tlogomas No. 7</span></div>
+        </div>
+        <div class="metrics-row" style="margin-bottom:0; box-shadow:none;">
+          <div class="metric-item" style="padding:10px;">
+            <div class="metric-label">Kapasitas</div>
+            <div class="metric-val" style="font-size: 16px;" id="detail-partner-cap">30 kg</div>
+          </div>
+          <div class="metric-item" style="padding:10px;">
+            <div class="metric-label">Komisi</div>
+            <div class="metric-val" style="font-size: 16px; color: var(--green-600);" id="detail-partner-com">15%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: CHAT ══ -->
+  <div class="modal-overlay" id="modal-chat">
+    <div class="modal" style="width: 360px;">
+      <div class="modal-header" style="background: var(--green-500); color: white; border-bottom: none;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="avatar-sm" style="background: rgba(255,255,255,0.2); color: white;" id="chat-avatar">AR</div>
+          <div>
+            <div class="modal-title" style="color: white;" id="chat-name">Ahmad Rifai</div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.8);"><i class="ti ti-circle-dot"
+                style="color:#86EFAC"></i> Online</div>
+          </div>
+        </div>
+        <button class="modal-close" style="color: white;" onclick="closeModal('modal-chat')"><i
+            class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body" id="chat-body"
+        style="background: var(--gray-50); height: 200px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">
+        <div
+          style="align-self: flex-start; background: white; padding: 8px 12px; border-radius: 10px 10px 10px 0; border: var(--border); font-size: 12px; max-width: 80%;">
+          Halo min, ini pesanan atas nama Rina Aulia sudah saya antarkan ya.
+          <div style="font-size: 9px; color: var(--gray-500); margin-top: 4px; text-align: right;">10:24</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 10px; background: white;">
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <input class="form-control" placeholder="Ketik pesan..." style="flex: 1;" id="chat-input"
+            onkeypress="if(event.key==='Enter')sendMessage()">
+          <button class="btn btn-primary" onclick="sendMessage()"><i class="ti ti-send"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOAST CONTAINER ══ -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    // ─── DATA ───
+    let ORDERS = [];
+    let COURIERS = [];
+    let PARTNERS = [];
+
+    function toggleSidebar() {
+      document.querySelector('.sidebar').classList.toggle('open');
+      document.getElementById('sidebar-overlay').classList.toggle('open');
+    }
+
+    const STATUS_BADGE = {
+      antri: '<span class="badge badge-gray"><i class="ti ti-clock"></i> Antri</span>',
+      dijemput: '<span class="badge badge-amber"><i class="ti ti-map-pin"></i> Dijemput</span>',
+      dicuci: '<span class="badge badge-amber"><i class="ti ti-wash"></i> Dicuci</span>',
+      dikeringkan: '<span class="badge badge-blue"><i class="ti ti-wind"></i> Dikeringkan</span>',
+      diantar: '<span class="badge badge-blue"><i class="ti ti-truck-delivery"></i> Diantar</span>',
+      selesai: '<span class="badge badge-green"><i class="ti ti-check"></i> Selesai</span>',
+    };
+
+    let currentFilter = 'all';
+    let currentSearch = '';
+    let currentService = '';
+    let currentPartner = '';
+    let activeOrderId = null;
+    let selectedKurir = null;
+
+    // ─── NAVIGATION ───
+    const PAGE_TITLES = {
+      overview: 'Overview',
+      orders: 'Kelola Order',
+      couriers: 'Manajemen Kurir',
+      partners: 'Mitra Laundry',
+      finance: 'Laporan Finansial',
+      firebase: 'Setup Firebase',
+      settings: 'Pengaturan',
+    };
+
+    function goPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + id).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + id + "'")) {
+          btn.classList.add('active');
+        }
+      });
+      document.getElementById('topbar-title').textContent = PAGE_TITLES[id] || id;
+      if (id === 'orders') renderOrders();
+      if (id === 'couriers') renderCouriers();
+      if (id === 'partners') renderPartners();
+
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar && sidebar.classList.contains('open')) toggleSidebar();
+    }
+
+    // ─── ORDERS TABLE ───
+    function renderOrders() {
+      const tbody = document.getElementById('orders-body');
+      let data = ORDERS.filter(o => {
+        if (currentFilter !== 'all' && o.statusGroup !== currentFilter) return false;
+        if (currentSearch && !o.id.toLowerCase().includes(currentSearch) && !o.name.toLowerCase().includes(currentSearch)) return false;
+        if (currentService && o.service !== currentService) return false;
+        if (currentPartner && o.partner !== currentPartner) return false;
+        return true;
+      });
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="ti ti-clipboard-off"></i><p>Tidak ada order ditemukan</p></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(o => `
+    <tr>
+      <td><span class="order-id">${o.id}</span></td>
+      <td>${o.customerName || o.name}</td>
+      <td>${o.service}</td>
+      <td>${o.weight} kg</td>
+      <td style="font-weight:500">${typeof o.totalPrice === 'number' ? DB.formatPrice(o.totalPrice) : o.totalPrice || o.total}</td>
+      <td>${o.courierName === '—' || !o.courierName ? '<span style="color:var(--amber-600);font-weight:500">⚠ Belum assign</span>' : o.courierName}</td>
+      <td>${o.partnerName || o.partner}</td>
+      <td>${STATUS_BADGE[o.status] || o.status}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          ${o.courierName === '—' || !o.courierName ? `<button class="btn btn-primary btn-sm" onclick="openAssignModal('${o.id}')"><i class="ti ti-user-plus"></i> Assign</button>` : ''}
+          <button class="btn btn-outline btn-sm" onclick="openStatusModal('${o.id}')"><i class="ti ti-refresh"></i> Status</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+    }
+
+    function filterOrders(group, btn) {
+      currentFilter = group;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderOrders();
+    }
+
+    function searchOrders(val) {
+      currentSearch = val.toLowerCase();
+      renderOrders();
+    }
+
+    function filterByService(val) { currentService = val; renderOrders(); }
+    function filterByPartner(val) { currentPartner = val; renderOrders(); }
+
+    function openNewOrderModal() {
+      document.getElementById('new-order-name').value = '';
+      document.getElementById('new-order-weight').value = '';
+      document.getElementById('modal-new-order').classList.add('open');
+    }
+
+    async function confirmNewOrder() {
+      const name = document.getElementById('new-order-name').value;
+      const service = document.getElementById('new-order-service').value;
+      const partner = document.getElementById('new-order-partner').value;
+      const weight = document.getElementById('new-order-weight').value;
+
+      if (!name || !weight) {
+        showToast('Isi nama dan berat terlebih dahulu!', 'error');
+        return;
+      }
+
+      const res = await DB.createOrder({
+        customerId: 'admin_created',
+        customerName: name,
+        service: service,
+        weight: weight,
+        address: 'Diinput oleh Admin',
+        partnerId: 'usr_partner_001',
+        partnerName: partner
+      });
+
+      if (res.success) {
+        closeModal('modal-new-order');
+        showToast('Order baru berhasil dibuat: ' + res.orderId, 'success');
+      } else {
+        showToast('Gagal membuat order: ' + res.error, 'error');
+      }
+    }
+
+    // ─── ASSIGN MODAL ───
+    function openAssignModal(orderId) {
+      activeOrderId = orderId;
+      selectedKurir = null;
+      document.getElementById('modal-order-id').textContent = orderId;
+      document.querySelectorAll('.kurir-item').forEach(el => el.classList.remove('selected'));
+      document.getElementById('modal-assign').classList.add('open');
+    }
+
+    function selectKurir(el, initials, name) {
+      document.querySelectorAll('.kurir-item').forEach(i => i.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedKurir = { initials, name };
+    }
+
+    async function confirmAssign() {
+      if (!selectedKurir) { showToast('Pilih kurir dulu!', 'error'); return; }
+
+      const courierName = selectedKurir.name.split(' ')[0] + ' ' + (selectedKurir.name.split(' ')[1]?.[0] || '') + '.';
+
+      const res = await DB.updateOrder(activeOrderId, {
+        courierId: 'usr_courier_001', // Harusnya ID asli kurir yang dipilih
+        courierName: courierName,
+        status: 'dijemput',
+        statusGroup: 'proses'
+      });
+
+      if (res.success) {
+        closeModal('modal-assign');
+        showToast(`${selectedKurir.name} di-assign ke ${activeOrderId}`, 'success');
+      } else {
+        showToast('Gagal assign kurir', 'error');
+      }
+    }
+
+    // ─── STATUS MODAL ───
+    function openStatusModal(orderId) {
+      activeOrderId = orderId;
+      document.getElementById('modal-status-order-id').textContent = orderId;
+      const order = ORDERS.find(o => o.id === orderId);
+      if (order) document.getElementById('new-status-select').value = order.status;
+      document.getElementById('modal-status').classList.add('open');
+    }
+
+    const STATUS_GROUP_MAP = {
+      antri: 'antri', dijemput: 'proses', dicuci: 'proses',
+      dikeringkan: 'proses', diantar: 'diantar', selesai: 'selesai'
+    };
+
+    async function confirmStatusUpdate() {
+      const newStatus = document.getElementById('new-status-select').value;
+
+      const res = await DB.updateOrder(activeOrderId, {
+        status: newStatus,
+        statusGroup: DB.STATUS_GROUP_MAP[newStatus]
+      });
+
+      if (res.success) {
+        closeModal('modal-status');
+        showToast(`Status ${activeOrderId} → ${newStatus}`, 'success');
+      } else {
+        showToast('Gagal update status', 'error');
+      }
+    }
+
+    function renderCouriers() {
+      const tbody = document.getElementById('couriers-body');
+      if (!tbody) return;
+      if (COURIERS.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="ti ti-bike-off"></i><p>Tidak ada data kurir</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = COURIERS.map(c => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="avatar-sm" style="${c.bg ? 'background:' + c.bg + ';color:' + c.color : ''}">${c.initials}</div>
+          <span style="font-weight:500">${c.name}</span>
+        </div>
+      </td>
+      <td style="font-family:var(--font-mono);font-size:12px">${c.phone}</td>
+      <td>${c.today}</td>
+      <td>${c.total}</td>
+      <td>⭐ ${c.rating}</td>
+      <td style="color:var(--green-600);font-weight:500">${c.fee}</td>
+      <td><span class="badge ${c.badgeClass}">${c.icon}${c.status}</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="openChatModal('${c.initials}', '${c.name}')"><i class="ti ti-message"></i> Chat</button>
+          <button class="btn btn-outline btn-sm" onclick="openEditCourierModal('${c.name}', '${c.phone}')"><i class="ti ti-edit"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+    }
+
+    function renderPartners() {
+      const tbody = document.getElementById('partners-body');
+      if (!tbody) return;
+      if (PARTNERS.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="ti ti-building-store"></i><p>Tidak ada data mitra</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = PARTNERS.map(p => `
+    <tr>
+      <td>
+        <div style="font-weight:500">${p.name}</div>
+        <div style="font-size:11px;color:var(--gray-500)">${p.type}</div>
+      </td>
+      <td>${p.address}</td>
+      <td>${p.capacity}</td>
+      <td>${p.commission}</td>
+      <td>${p.orders}</td>
+      <td><span class="badge badge-green">${p.status}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openPartnerDetailModal('${p.name}', '${p.address}', '${p.capacity}', '${p.commission}')"><i class="ti ti-eye"></i> Detail</button>
+      </td>
+    </tr>
+  `).join('');
+    }
+
+    // ─── COURIER MODAL ───
+    function openAddCourierModal() {
+      document.getElementById('courier-modal-title').textContent = 'Tambah Kurir Freelance';
+      document.getElementById('courier-name').value = '';
+      document.getElementById('courier-phone').value = '';
+      document.getElementById('modal-add-courier').classList.add('open');
+    }
+
+    function openEditCourierModal(name, phone) {
+      document.getElementById('courier-modal-title').textContent = 'Edit Data Kurir';
+      document.getElementById('courier-name').value = name;
+      document.getElementById('courier-phone').value = phone;
+      document.getElementById('modal-add-courier').classList.add('open');
+    }
+
+    function confirmAddCourier() {
+      const name = document.getElementById('courier-name').value;
+      const phone = document.getElementById('courier-phone').value;
+      if (!name || !phone) { showToast('Isi nama dan No. HP kurir!', 'error'); return; }
+
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      COURIERS.push({
+        initials: initials, bg: 'var(--green-100)', color: 'var(--green-600)',
+        name: name, phone: phone, today: 0, total: 0, rating: '0.0', fee: 'Rp 0',
+        status: 'Standby', badgeClass: 'badge-gray', icon: ''
+      });
+
+      closeModal('modal-add-courier');
+      renderCouriers();
+      showToast('Data kurir ' + name + ' berhasil disimpan', 'success');
+
+      const nb = document.getElementById('nb-couriers');
+      if (nb) nb.textContent = COURIERS.length;
+    }
+
+    // ─── PARTNER MODAL ───
+    function openAddPartnerModal() {
+      document.getElementById('partner-name').value = '';
+      document.getElementById('partner-address').value = '';
+      document.getElementById('partner-capacity').value = '';
+      document.getElementById('partner-commission').value = '';
+      document.getElementById('modal-add-partner').classList.add('open');
+    }
+
+    function confirmAddPartner() {
+      const name = document.getElementById('partner-name').value;
+      const address = document.getElementById('partner-address').value;
+      const capacity = document.getElementById('partner-capacity').value;
+      const commission = document.getElementById('partner-commission').value;
+
+      if (!name) { showToast('Isi nama mitra!', 'error'); return; }
+
+      PARTNERS.push({
+        name: name, type: 'Mitra baru', address: address || '-',
+        capacity: capacity ? capacity + ' kg/hari' : '-',
+        commission: commission ? commission + '%' : '-',
+        orders: '0 order', status: 'Aktif'
+      });
+
+      closeModal('modal-add-partner');
+      renderPartners();
+      showToast('Mitra ' + name + ' berhasil ditambahkan', 'success');
+    }
+
+    function openPartnerDetailModal(name, address, cap, com) {
+      document.getElementById('detail-partner-name').textContent = name;
+      document.getElementById('detail-partner-address').textContent = address;
+      document.getElementById('detail-partner-cap').textContent = cap;
+      document.getElementById('detail-partner-com').textContent = com;
+      document.getElementById('modal-partner-detail').classList.add('open');
+    }
+
+    // ─── CHAT MODAL ───
+    function openChatModal(initials, name) {
+      document.getElementById('chat-avatar').textContent = initials;
+      document.getElementById('chat-name').textContent = name;
+      document.getElementById('chat-input').value = '';
+      const chatBody = document.getElementById('chat-body');
+      chatBody.innerHTML = `
+      <div style="align-self: flex-start; background: white; padding: 8px 12px; border-radius: 10px 10px 10px 0; border: var(--border); font-size: 12px; max-width: 80%;">
+        Halo min, ini pesanan sudah saya update statusnya.
+        <div style="font-size: 9px; color: var(--gray-500); margin-top: 4px; text-align: right;">10:24</div>
+      </div>
+  `;
+      document.getElementById('modal-chat').classList.add('open');
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      if (!input.value.trim()) return;
+      const chatBody = document.getElementById('chat-body');
+      const now = new Date();
+      const time = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+
+      const msgDiv = document.createElement('div');
+      msgDiv.style.cssText = "align-self: flex-end; background: var(--green-100); padding: 8px 12px; border-radius: 10px 10px 0 10px; font-size: 12px; max-width: 80%;";
+      msgDiv.innerHTML = input.value + '<div style="font-size: 9px; color: var(--gray-500); margin-top: 4px; text-align: right;">' + time + '</div>';
+
+      chatBody.appendChild(msgDiv);
+      input.value = '';
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    // ─── MODAL HELPERS ───
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === this) this.classList.remove('open');
+      });
+    });
+
+    // ─── TOAST ───
+    function showToast(msg, type) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (type ? ' ' + type : '');
+      const icon = type === 'success' ? 'ti-check' : type === 'error' ? 'ti-x' : 'ti-info-circle';
+      toast.innerHTML = `<i class="ti ${icon}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Init
+    DB.listenOrders(orders => {
+      ORDERS = orders;
+      renderOrders();
+      document.getElementById('nb-orders').textContent = ORDERS.filter(o => o.statusGroup !== 'selesai').length;
+    });
+
+    DB.getCouriers().then(couriers => {
+      COURIERS = couriers;
+      renderCouriers();
+      const nb = document.getElementById('nb-couriers');
+      if (nb) nb.textContent = COURIERS.length;
+    });
+
+    DB.getPartners().then(partners => {
+      PARTNERS = partners;
+      renderPartners();
+    });
+
+    // Tampilkan data admin dari session
+    if (currentUser) {
+      const adminAvatar = document.getElementById('admin-avatar');
+      const adminName = document.getElementById('admin-name');
+      if (adminAvatar) adminAvatar.textContent = currentUser.avatar || currentUser.name[0];
+      if (adminName) adminName.textContent = currentUser.name;
+    }
+  </script>
+</body>
+
+</html>

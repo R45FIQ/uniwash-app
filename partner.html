@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mitra - UniWash</title>
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="partner.css">
+
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Auth & DB Module -->
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+</head>
+<body>
+
+<script>
+  // Route Protection: hanya partner yang boleh akses
+  const currentUser = AuthManager.requireAuth(['partner']);
+</script>
+
+  <div class="app-container">
+    
+    <header class="app-header">
+      <div class="header-top">
+        <div class="store-info">
+          <div class="store-icon"><i class="ti ti-building-store"></i></div>
+          <div>
+            <div class="greeting">Mitra Laundry</div>
+            <div class="store-name" id="store-name">Laundry Berkah KBT</div>
+          </div>
+        </div>
+        <div class="toggle-status">
+          <div class="status-dot"></div> Buka
+        </div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Pendapatan Hari Ini</div>
+          <div class="stat-val">Rp 125.000</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Antrean Cucian</div>
+          <div class="stat-val">4 Pesanan</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-body">
+      
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this, 'masuk')">Masuk (1)</button>
+        <button class="tab" onclick="switchTab(this, 'proses')">Proses (0)</button>
+        <button class="tab" onclick="switchTab(this, 'selesai')">Selesai (0)</button>
+      </div>
+
+      <!-- Tab Content: Masuk -->
+      <div id="tab-masuk" class="order-list">
+        <div class="order-card" id="order-1">
+          <div class="order-header">
+            <div class="order-id">#LK-2406-0048</div>
+            <div class="order-time"><i class="ti ti-clock"></i> 10 menit lalu</div>
+          </div>
+          <div class="order-detail">
+            <div class="customer-info">
+              <div class="cust-avatar">D</div>
+              <div>
+                <div class="cust-name">Dina Amelia</div>
+                <div class="service-type">Cuci Kiloan</div>
+              </div>
+            </div>
+            <div class="order-meta">
+              <div class="order-price">Rp 21.000</div>
+              <div class="order-weight">3 Kg</div>
+            </div>
+          </div>
+          <button class="btn-action btn-primary" onclick="prosesCucian('order-1')">
+            <i class="ti ti-washing-machine"></i> Mulai Cuci
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content: Proses -->
+      <div id="tab-proses" class="order-list" style="display: none;">
+        <!-- Akan diisi secara dinamis -->
+        <div style="text-align: center; color: var(--gray-500); padding: 40px 0; font-size: 14px;" id="empty-proses">
+          <i class="ti ti-washer" style="font-size: 48px; opacity: 0.5; margin-bottom: 12px; display: block;"></i>
+          Belum ada cucian yang diproses
+        </div>
+      </div>
+
+      <!-- Tab Content: Selesai -->
+      <div id="tab-selesai" class="order-list" style="display: none;">
+         <div style="text-align: center; color: var(--gray-500); padding: 40px 0; font-size: 14px;" id="empty-selesai">
+          <i class="ti ti-check" style="font-size: 48px; opacity: 0.5; margin-bottom: 12px; display: block;"></i>
+          Belum ada cucian yang selesai
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-item active">
+        <i class="ti ti-clipboard-list"></i> Pesanan
+      </button>
+      <button class="nav-item">
+        <i class="ti ti-wallet"></i> Keuangan
+      </button>
+      <button class="nav-item" onclick="AuthManager.logout()">
+        <i class="ti ti-logout"></i> Keluar
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    // Tampilkan data user dari session
+    if (currentUser) {
+      const storeName = currentUser.storeName || currentUser.name;
+      document.getElementById('store-name').textContent = storeName;
+    }
+
+    function switchTab(btn, tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      
+      document.getElementById('tab-masuk').style.display = 'none';
+      document.getElementById('tab-proses').style.display = 'none';
+      document.getElementById('tab-selesai').style.display = 'none';
+      
+      document.getElementById('tab-' + tabId).style.display = 'flex';
+    }
+
+    async function prosesCucian(orderId) {
+      const res = await DB.updateOrder(orderId, {
+        status: 'dicuci',
+        statusGroup: 'proses'
+      });
+      if (!res.success) alert('Gagal update: ' + res.error);
+    }
+    
+    async function selesaiCucian(orderId) {
+      const res = await DB.updateOrder(orderId, {
+        status: 'selesai',
+        statusGroup: 'selesai'
+      });
+      if (!res.success) alert('Gagal update: ' + res.error);
+    }
+
+    // Render order card
+    function createOrderCard(order, actionHtml) {
+      return `
+        <div class="order-card" id="${order.id}">
+          <div class="order-header">
+            <div class="order-id">${order.id}</div>
+            <div class="order-time">${new Date(order.createdAt).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</div>
+          </div>
+          <div class="order-body">
+            <div class="customer-name">${order.customerName}</div>
+            <div class="order-detail">${order.service} • ${order.weight} kg</div>
+          </div>
+          ${actionHtml}
+        </div>
+      `;
+    }
+
+    // Listen untuk pesanan
+    if (currentUser) {
+      DB.listenOrders(orders => {
+        const masuk = orders.filter(o => o.status === 'dijemput' || o.status === 'antri');
+        const proses = orders.filter(o => o.statusGroup === 'proses' && o.status !== 'dijemput');
+        const selesai = orders.filter(o => o.statusGroup === 'selesai' || o.status === 'diantar');
+
+        // Update badge tabs
+        document.querySelector('.tab:nth-child(1)').textContent = `Masuk (${masuk.length})`;
+        document.querySelector('.tab:nth-child(2)').textContent = `Proses (${proses.length})`;
+        document.querySelector('.tab:nth-child(3)').textContent = `Selesai (${selesai.length})`;
+
+        // Render Masuk
+        const tabMasuk = document.getElementById('tab-masuk');
+        if (masuk.length === 0) {
+          tabMasuk.innerHTML = `<div style="text-align: center; color: var(--gray-500); padding: 40px 0; font-size: 14px;">
+            <i class="ti ti-inbox" style="font-size: 48px; opacity: 0.5; margin-bottom: 12px; display: block;"></i>Belum ada pesanan masuk</div>`;
+        } else {
+          tabMasuk.innerHTML = masuk.map(o => createOrderCard(o, `
+            <div class="order-actions">
+              <button class="btn-action btn-primary" onclick="prosesCucian('${o.id}')">
+                <i class="ti ti-wash"></i> Mulai Cuci
+              </button>
+            </div>
+          `)).join('');
+        }
+
+        // Render Proses
+        const tabProses = document.getElementById('tab-proses');
+        if (proses.length === 0) {
+          tabProses.innerHTML = `<div style="text-align: center; color: var(--gray-500); padding: 40px 0; font-size: 14px;">
+            <i class="ti ti-washer" style="font-size: 48px; opacity: 0.5; margin-bottom: 12px; display: block;"></i>Belum ada cucian yang diproses</div>`;
+        } else {
+          tabProses.innerHTML = proses.map(o => createOrderCard(o, `
+            <div class="order-actions">
+              <button class="btn-action btn-success" onclick="selesaiCucian('${o.id}')">
+                <i class="ti ti-package"></i> Selesai & Packing
+              </button>
+            </div>
+          `)).join('');
+        }
+
+        // Render Selesai
+        const tabSelesai = document.getElementById('tab-selesai');
+        if (selesai.length === 0) {
+          tabSelesai.innerHTML = `<div style="text-align: center; color: var(--gray-500); padding: 40px 0; font-size: 14px;">
+            <i class="ti ti-check" style="font-size: 48px; opacity: 0.5; margin-bottom: 12px; display: block;"></i>Belum ada cucian yang selesai</div>`;
+        } else {
+          tabSelesai.innerHTML = selesai.map(o => createOrderCard(o, `
+            <div style="background: #DCFCE7; color: #16A34A; padding: 8px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 12px; margin-top: 12px;">
+              <i class="ti ti-check"></i> Menunggu Diambil Kurir
+            </div>
+          `)).join('');
+        }
+
+      }, { partnerId: currentUser.id });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kurir - UniWash</title>
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="courier.css">
+
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Auth & DB Module -->
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+</head>
+<body>
+
+<script>
+  // Route Protection: hanya courier yang boleh akses
+  const currentUser = AuthManager.requireAuth(['courier']);
+</script>
+
+  <div class="app-container">
+    
+    <div class="map-header">
+      <div class="top-bar">
+        <button class="circle-btn" onclick="AuthManager.logout()"><i class="ti ti-arrow-left"></i></button>
+        <button class="circle-btn"><i class="ti ti-dots-vertical"></i></button>
+      </div>
+      <div class="map-pin-start"></div>
+      <div class="map-pin-end"></div>
+      <div class="status-badge">Menuju Lokasi Pelanggan</div>
+    </div>
+    
+    <div class="task-body">
+      <div class="handle"></div>
+      <div class="task-title">Jemput Pakaian</div>
+      <div class="task-subtitle">Kost Putri Melati, Jl. Bunga 12, Kamar 4A</div>
+      
+      <div class="customer-card">
+        <div class="cust-info">
+          <div class="cust-avatar">D</div>
+          <div>
+            <div class="cust-name">Dina Amelia</div>
+            <div class="cust-phone">0812-3456-7890</div>
+          </div>
+        </div>
+        <button class="phone-btn" onclick="alert('Memanggil 0812-3456-7890...')">
+          <i class="ti ti-phone"></i>
+        </button>
+      </div>
+      
+      <div class="order-details">
+        <div class="detail-row">
+          <span class="d-label">ID Pesanan</span>
+          <span class="d-val">#LK-2406-0048</span>
+        </div>
+        <div class="detail-row">
+          <span class="d-label">Layanan</span>
+          <span class="d-val">Cuci Kiloan</span>
+        </div>
+        <div class="detail-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-300);">
+          <span class="d-label">Estimasi Tagihan</span>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+            <span class="d-val" style="font-size: 16px;">Rp 21.000</span>
+            <span class="cod-badge"><i class="ti ti-cash"></i> Bayar Tunai (COD)</span>
+          </div>
+        </div>
+      </div>
+      
+      <div style="flex:1;"></div>
+      
+      <button class="swipe-btn" id="finish-btn" onclick="finishTask()">
+        Selesaikan Penjemputan <i class="ti ti-check"></i>
+      </button>
+    </div>
+    
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-screen">
+      <div class="check-circle"><i class="ti ti-check"></i></div>
+      <h2 style="margin-bottom: 8px;">Tugas Selesai!</h2>
+      <p style="opacity: 0.8; text-align: center; padding: 0 20px; font-size: 14px;">Pakaian telah diterima. Jangan lupa tagihkan COD Rp 21.000.</p>
+      
+      <button onclick="AuthManager.logout()" style="margin-top: 32px; background: white; color: var(--primary); border: none; padding: 12px 24px; border-radius: 20px; font-weight: 700; cursor: pointer;">
+        Kembali ke Beranda
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let currentTask = null;
+
+    // Listen untuk task kurir
+    if (currentUser) {
+      DB.listenOrders(orders => {
+        // Ambil task pertama yang assigned ke kurir ini dan sedang dalam proses antar/jemput
+        const tasks = orders.filter(o => 
+          (o.status === 'dijemput' || o.status === 'diantar') &&
+          o.courierName && o.courierName.includes(currentUser.name.split(' ')[0]) // temporary match until ID is strict
+        );
+        
+        currentTask = tasks.length > 0 ? tasks[0] : null;
+        
+        if (currentTask) {
+          document.querySelector('.app-container').style.display = 'flex';
+          
+          // Populate UI
+          document.querySelector('.address-box strong').textContent = currentTask.address || 'Alamat tidak tersedia';
+          document.querySelector('.cust-name').textContent = currentTask.customerName;
+          
+          const detailRows = document.querySelectorAll('.d-val');
+          detailRows[0].textContent = currentTask.id;
+          detailRows[1].textContent = currentTask.service;
+          detailRows[2].textContent = typeof currentTask.totalPrice === 'number' ? DB.formatPrice(currentTask.totalPrice) : currentTask.totalPrice || currentTask.total;
+
+          // Update Map/Header context
+          const headerTitle = document.querySelector('.header h1');
+          const headerSub = document.querySelector('.header p');
+          const btn = document.getElementById('finish-btn');
+          
+          if (currentTask.status === 'dijemput') {
+            headerTitle.innerHTML = 'Menjemput Pakaian <i class="ti ti-washing-machine"></i>';
+            headerSub.textContent = 'Menuju lokasi customer';
+            btn.innerHTML = 'Selesaikan Penjemputan <i class="ti ti-check"></i>';
+          } else {
+            headerTitle.innerHTML = 'Mengantar Pakaian <i class="ti ti-truck-delivery"></i>';
+            headerSub.textContent = 'Menuju lokasi customer';
+            btn.innerHTML = 'Selesaikan Pengantaran <i class="ti ti-check"></i>';
+          }
+        } else {
+          // Empty state jika tidak ada task
+          document.querySelector('.task-card').innerHTML = `
+            <div style="text-align: center; padding: 40px 20px;">
+              <i class="ti ti-coffee" style="font-size: 48px; opacity: 0.3; margin-bottom: 16px;"></i>
+              <h3 style="margin-bottom: 8px;">Tidak ada tugas aktif</h3>
+              <p style="color: var(--gray-500); font-size: 14px;">Silakan standby menunggu pesanan masuk.</p>
+            </div>
+            <button onclick="AuthManager.logout()" class="swipe-btn" style="background: var(--gray-800); color: white; margin-top: 24px;">Keluar</button>
+          `;
+        }
+      });
+    }
+
+    async function finishTask() {
+      if (!currentTask) return;
+      
+      const btn = document.getElementById('finish-btn');
+      btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i> Memproses...';
+      
+      const nextStatus = currentTask.status === 'dijemput' ? 'dicuci' : 'selesai';
+      const nextGroup = currentTask.status === 'dijemput' ? 'proses' : 'selesai';
+      
+      const res = await DB.updateOrder(currentTask.id, {
+        status: nextStatus,
+        statusGroup: nextGroup
+      });
+      
+      if (res.success) {
+        document.getElementById('success-screen').classList.add('active');
+      } else {
+        alert('Gagal menyelesaikan tugas: ' + res.error);
+        btn.innerHTML = 'Coba Lagi <i class="ti ti-refresh"></i>';
+      }
+    }
+  </script>
+</body>
+</html>

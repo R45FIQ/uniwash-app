@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fungsi bantuan
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+
+    // ==== USERS ====
+    match /users/{userId} {
+      // Siapapun bisa buat akun baru (register)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // User hanya bisa baca/update data sendiri, Admin bisa semua
+      allow read, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ==== ORDERS ====
+    match /orders/{orderId} {
+      // Customer: hanya bisa baca/tulis ordernya sendiri
+      // Courier: hanya bisa baca order yang di-assign padanya, atau update status
+      // Partner: hanya bisa baca order untuk tokonya, atau update status
+      // Admin: full access
+      
+      allow create: if isAuthenticated() && (
+        isAdmin() || 
+        (getUserData().role == 'customer' && request.resource.data.customerId == request.auth.uid)
+      );
+      
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (getUserData().role == 'customer' && resource.data.customerId == request.auth.uid) ||
+        (getUserData().role == 'courier' && resource.data.courierName != null) || // simplify untuk demo
+        (getUserData().role == 'partner') // simplify untuk demo
+      );
+      
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        getUserData().role == 'courier' ||
+        getUserData().role == 'partner'
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // ==== PARTNERS & COURIERS ====
+    match /partners/{partnerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /couriers/{courierId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

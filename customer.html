@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Customer - UniWash</title>
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="customer.css">
+
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Auth & DB Module -->
+  <script src="firebase-config.js"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+</head>
+<body>
+
+<script>
+  // Route Protection: hanya customer yang boleh akses
+  const currentUser = AuthManager.requireAuth(['customer']);
+</script>
+
+  <div class="app-container">
+    
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splash">
+      <div class="splash-logo"><i class="ti ti-wash"></i></div>
+      <div class="splash-text">UniWash</div>
+    </div>
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="user-info">
+          <div class="avatar" id="user-avatar">R</div>
+          <div>
+            <div class="greeting" id="user-greeting">Selamat pagi,</div>
+            <div class="name" id="user-name">Pelanggan</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="AuthManager.logout()"><i class="ti ti-logout"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ACTIVE ORDER CARD -->
+    <div class="tracking-card" id="active-order">
+      <div class="track-header">
+        <div class="track-title">Pesanan Aktif</div>
+        <div class="track-id">#LK-2406-0046</div>
+      </div>
+      <div class="track-status-box">
+        <div class="status-icon"><i class="ti ti-wash"></i></div>
+        <div class="status-info">
+          <div class="status-main" id="status-text">Sedang Dicuci</div>
+          <div class="status-desc" id="status-desc">Estimasi selesai: Hari ini, 15:00</div>
+        </div>
+      </div>
+      <div style="margin-top: 16px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--gray-500);">
+        <div style="display:flex; align-items:center; gap:6px;"><i class="ti ti-building-store"></i> Mitra: Bu Siti</div>
+        <div style="display:flex; align-items:center; gap:6px; color: var(--primary);"><i class="ti ti-receipt"></i> Rp 21.000</div>
+      </div>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div class="app-body">
+      
+      <div class="section-title">Layanan Kami</div>
+      <div class="services-grid">
+        <button class="service-btn" onclick="openOrderModal('Kiloan')">
+          <div class="service-icon"><i class="ti ti-shirt"></i></div>
+          <div class="service-label">Cuci Kiloan</div>
+        </button>
+        <button class="service-btn" onclick="openOrderModal('Satuan')">
+          <div class="service-icon"><i class="ti ti-hanger"></i></div>
+          <div class="service-label">Cuci Satuan</div>
+        </button>
+      </div>
+
+      <div class="section-title">Riwayat Pesanan</div>
+      <div class="history-list" id="history-list">
+        <div class="history-item">
+          <div class="hist-left">
+            <div class="hist-icon done"><i class="ti ti-check"></i></div>
+            <div>
+              <div class="hist-title">Cuci Kiloan (4 kg)</div>
+              <div class="hist-date">10 Jun 2025 &bull; Selesai</div>
+            </div>
+          </div>
+          <div class="hist-price">Rp 24.000</div>
+        </div>
+        <div class="history-item">
+          <div class="hist-left">
+            <div class="hist-icon done"><i class="ti ti-check"></i></div>
+            <div>
+              <div class="hist-title">Cuci Satuan (Bedcover)</div>
+              <div class="hist-date">02 Jun 2025 &bull; Selesai</div>
+            </div>
+          </div>
+          <div class="hist-price">Rp 35.000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <button class="nav-item active">
+        <i class="ti ti-home"></i> Beranda
+      </button>
+      <button class="nav-item">
+        <i class="ti ti-receipt"></i> Aktivitas
+      </button>
+      <button class="nav-item">
+        <i class="ti ti-message"></i> Pesan
+      </button>
+      <button class="nav-item">
+        <i class="ti ti-user"></i> Profil
+      </button>
+    </nav>
+
+    <!-- NEW ORDER MODAL -->
+    <div class="modal-overlay" id="modal-order">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 style="margin-bottom: 20px; font-weight: 700;">Buat Pesanan Baru</h3>
+        <p style="font-size: 12px; color: var(--gray-500); margin-bottom: 16px;">Kurir kami akan menjemput pakaian kotor ke alamat Anda.</p>
+        
+        <div class="form-group">
+          <label class="form-label">Alamat Penjemputan</label>
+          <input type="text" class="form-control" value="Kost Putri Melati, Jl. Bunga 12" id="order-address">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estimasi Berat (Kg) / Jumlah</label>
+          <input type="number" class="form-control" placeholder="Bisa dikosongi, kurir akan menimbang" id="order-weight">
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button class="btn-block" style="background: var(--gray-200); color: var(--gray-800); flex: 1;" onclick="closeOrderModal()">Batal</button>
+          <button class="btn-block" style="flex: 2;" onclick="submitOrder()">Pesan Sekarang</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Tampilkan data user dari session
+    if (currentUser) {
+      document.getElementById('user-avatar').textContent = currentUser.avatar || currentUser.name[0];
+      document.getElementById('user-name').textContent = currentUser.name;
+      
+      // Greeting berdasarkan waktu
+      const hour = new Date().getHours();
+      let greeting = 'Selamat malam,';
+      if (hour >= 5 && hour < 11) greeting = 'Selamat pagi,';
+      else if (hour >= 11 && hour < 15) greeting = 'Selamat siang,';
+      else if (hour >= 15 && hour < 18) greeting = 'Selamat sore,';
+      document.getElementById('user-greeting').textContent = greeting;
+    }
+
+    // Sembunyikan splash screen setelah 1.5 detik
+    window.onload = () => {
+      setTimeout(() => {
+        const splash = document.getElementById('splash');
+        splash.style.opacity = '0';
+        splash.style.transform = 'scale(1.1)';
+        setTimeout(() => splash.remove(), 500);
+      }, 1500);
+    };
+
+    function openOrderModal(type) {
+      document.getElementById('modal-order').classList.add('open');
+      // Set focus to address slightly after open to prevent mobile keyboard layout break
+    }
+
+    function closeOrderModal() {
+      document.getElementById('modal-order').classList.remove('open');
+    }
+
+    async function submitOrder() {
+      const address = document.getElementById('order-address').value;
+      const weight = document.getElementById('order-weight').value || '1';
+      
+      closeOrderModal();
+      
+      const res = await DB.createOrder({
+        customerId: currentUser.id,
+        customerName: currentUser.name,
+        service: 'Reguler', // Default for now
+        weight: weight,
+        address: address,
+        partnerId: 'usr_partner_001',
+        partnerName: 'Laundry Bu Siti'
+      });
+      
+      if (res.success) {
+        // Tampilkan modal sukses
+        const successModal = document.createElement('div');
+        successModal.className = 'success-overlay active';
+        successModal.innerHTML = `
+          <div class="success-icon"><i class="ti ti-check"></i></div>
+          <h2 style="margin-bottom: 8px; color: var(--gray-900);">Pesanan Berhasil!</h2>
+          <p style="color: var(--gray-500); font-size: 14px; margin-bottom: 32px;">Kurir sedang menuju lokasi Anda untuk menjemput pakaian.</p>
+          <button class="btn-block" style="width: 80%;" onclick="this.parentElement.remove()">Tutup</button>
+        `;
+        document.querySelector('.app-container').appendChild(successModal);
+      } else {
+        alert('Gagal membuat pesanan: ' + res.error);
+      }
+    }
+
+    // Listen untuk pesanan aktif
+    DB.listenOrders(orders => {
+      const activeOrder = document.getElementById('active-order');
+      if (!orders || orders.length === 0) {
+        activeOrder.style.display = 'none';
+        return;
+      }
+      
+      // Ambil order pertama yang belum selesai
+      const order = orders.find(o => o.statusGroup !== 'selesai');
+      
+      if (!order) {
+        activeOrder.style.display = 'none';
+        return;
+      }
+      
+      activeOrder.style.display = 'flex';
+      
+      const trackId = activeOrder.querySelector('.track-id');
+      const statusText = document.getElementById('status-text');
+      const statusDesc = document.getElementById('status-desc');
+      const icon = activeOrder.querySelector('.status-icon i');
+      
+      trackId.textContent = order.id;
+      
+      if (order.status === 'antri') {
+        statusText.textContent = 'Mencari Kurir';
+        statusDesc.textContent = 'Menunggu kurir menerima pesanan...';
+        icon.className = 'ti ti-bike';
+      } else if (order.status === 'dijemput') {
+        statusText.textContent = 'Kurir Menuju Lokasi';
+        statusDesc.textContent = order.courierName + ' sedang menuju ke tempatmu.';
+        icon.className = 'ti ti-map-pin';
+      } else if (order.statusGroup === 'proses') {
+        statusText.textContent = 'Pakaian Sedang Diproses';
+        statusDesc.textContent = 'Mitra: ' + order.partnerName;
+        icon.className = 'ti ti-wash';
+      } else if (order.status === 'diantar') {
+        statusText.textContent = 'Kurir Mengantar Kembali';
+        statusDesc.textContent = order.courierName + ' sedang mengantar pakaian bersihmu.';
+        icon.className = 'ti ti-truck-delivery';
+      }
+    }, { customerId: currentUser.id });
+  </script>
+</body>
+</html>
