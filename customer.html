@@ -3,262 +3,893 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Customer - UniWash</title>
-  <!-- Tabler Icons -->
+  <title>UniWash — Customer</title>
+  <meta name="description" content="UniWash Campus Laundry — Bersih itu Gampang, Serius.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="customer.css">
-
-  <!-- Firebase SDK (Compat Version) -->
+  <!-- Leaflet Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-  <!-- Auth & DB Module -->
+  <!-- App Modules -->
   <script src="firebase-config.js"></script>
   <script src="db.js"></script>
   <script src="auth.js"></script>
+
+<style>
+/* ════════════════════════════
+   DESIGN TOKENS — UniWash Dark
+════════════════════════════ */
+:root {
+  --bg:        #0D0D0D;
+  --surface:   #1A1A2E;
+  --surface-2: #16213E;
+  --primary:   #3B9EFF;
+  --primary-glow: rgba(59,158,255,0.15);
+  --cyan:      #00D4FF;
+  --text:      #FFFFFF;
+  --muted:     #A0A8B8;
+  --success:   #4ECDC4;
+  --error:     #FF6B6B;
+  --warn:      #FFD93D;
+  --border:    rgba(255,255,255,0.08);
+  --glass:     rgba(255,255,255,0.04);
+  --card-glow: 0 0 24px rgba(59,158,255,0.12);
+  --r-card: 20px;
+  --r-btn:  50px;
+  --nav-h:  68px;
+  --font-h: 'Nunito', sans-serif;
+  --font-b: 'Inter', sans-serif;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font-b);
+  background: var(--bg);
+  color: var(--text);
+  overscroll-behavior: none;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── SPLASH ── */
+.splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: radial-gradient(ellipse at center, #0D1B3E 0%, #0D0D0D 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  transition: opacity 0.5s, transform 0.5s;
+}
+.splash.hide { opacity: 0; transform: scale(1.08); pointer-events: none; }
+.splash-icon {
+  width: 88px; height: 88px; border-radius: 24px;
+  background: linear-gradient(135deg, #1A1A2E, #0D1B3E);
+  border: 1px solid rgba(59,158,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 40px rgba(59,158,255,0.35);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%,100% { box-shadow: 0 0 30px rgba(59,158,255,0.3); }
+  50%      { box-shadow: 0 0 55px rgba(59,158,255,0.6); }
+}
+.splash-icon i { font-size: 44px; color: var(--primary); }
+.splash-title { font-family: var(--font-h); font-size: 36px; font-weight: 900; }
+.splash-title span { color: var(--primary); }
+.splash-sub { font-size: 12px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.splash-tagline { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 24px; }
+.splash-bar-wrap { width: 40px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 32px; }
+.splash-bar { height: 100%; background: var(--primary); border-radius: 3px; animation: fill-bar 1.4s ease forwards; }
+@keyframes fill-bar { 0%{width:0} 100%{width:100%} }
+
+/* ── SCROLLABLE BODY ── */
+.scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav-h) + 20px);
+}
+.scroll-body::-webkit-scrollbar { display: none; }
+
+/* ── HEADER ── */
+.header {
+  padding: 52px 20px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-size: 17px; font-weight: 900; color: #fff;
+  flex-shrink: 0;
+}
+.greet-sub { font-size: 12px; color: var(--muted); }
+.greet-name { font-family: var(--font-h); font-size: 18px; font-weight: 800; }
+.notif-btn {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--glass); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative;
+}
+.notif-btn i { font-size: 20px; color: var(--muted); }
+.notif-dot {
+  position: absolute; top: 8px; right: 8px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--error); border: 1.5px solid var(--bg);
+}
+
+/* ── ACTIVE ORDER CARD ── */
+.active-card {
+  margin: 0 20px 16px;
+  background: linear-gradient(135deg, #0D1B3E 0%, #0D2030 100%);
+  border: 1px solid rgba(59,158,255,0.22);
+  border-radius: var(--r-card);
+  padding: 18px;
+  box-shadow: var(--card-glow);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.active-card:active { transform: scale(0.98); }
+.ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.ac-title { font-family: var(--font-h); font-size: 14px; font-weight: 800; }
+.ac-id { font-size: 11px; color: var(--primary); font-weight: 700; }
+.ac-steps { display: flex; align-items: center; }
+.ac-step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.ac-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--border); color: var(--muted); font-size: 12px;
+  transition: all 0.3s;
+}
+.ac-dot.done { background: var(--success); border-color: var(--success); color: #fff; }
+.ac-dot.current { background: var(--primary); border-color: var(--primary); color: #fff; animation: step-pulse 1.5s ease infinite; }
+@keyframes step-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(59,158,255,0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(59,158,255,0); }
+}
+.ac-step-lbl { font-size: 9px; color: var(--muted); font-weight: 600; }
+.ac-step.done .ac-step-lbl, .ac-step.current .ac-step-lbl { color: #fff; }
+.ac-line { height: 2px; flex: 1; background: var(--border); margin-bottom: 14px; }
+.ac-line.done { background: var(--success); }
+.ac-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.ac-time { font-size: 11px; color: var(--muted); }
+.ac-link { font-size: 11px; color: var(--primary); font-weight: 700; }
+
+/* ── SECTION LABEL ── */
+.section-lbl {
+  padding: 4px 20px 12px;
+  font-family: var(--font-h);
+  font-size: 17px; font-weight: 800;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.section-lbl a { font-family: var(--font-b); font-size: 12px; color: var(--primary); font-weight: 600; }
+
+/* ── SERVICE GRID ── */
+.svc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 20px; }
+.svc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 18px 14px;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: var(--card-glow);
+  position: relative; overflow: hidden;
+}
+.svc-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(59,158,255,0), rgba(59,158,255,0.06));
+  opacity: 0; transition: opacity 0.2s;
+}
+.svc-card:active { transform: scale(0.95); border-color: var(--primary); }
+.svc-card:active::after { opacity: 1; }
+.svc-icon {
+  width: 46px; height: 46px; border-radius: 13px;
+  background: rgba(59,158,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.svc-icon i { font-size: 24px; color: var(--primary); }
+.svc-name { font-family: var(--font-h); font-size: 14px; font-weight: 800; }
+.svc-price { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* ── PROMO SCROLL ── */
+.promo-row { display: flex; gap: 12px; padding: 0 20px 20px; overflow-x: auto; }
+.promo-row::-webkit-scrollbar { display: none; }
+.promo-card {
+  flex-shrink: 0; width: 240px; border-radius: 16px; padding: 16px;
+  cursor: pointer; position: relative; overflow: hidden;
+}
+.promo-1 { background: linear-gradient(135deg,#0D1B3E,#1a3460); border: 1px solid rgba(59,158,255,0.25); }
+.promo-2 { background: linear-gradient(135deg,#1B0D3E,#341a60); border: 1px solid rgba(168,85,247,0.25); }
+.promo-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--primary); border-radius: 6px;
+  padding: 3px 8px; font-size: 10px; font-weight: 800;
+}
+.promo-ttl { font-family: var(--font-h); font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.promo-desc { font-size: 12px; color: var(--muted); }
+.promo-cta { font-size: 11px; color: var(--primary); font-weight: 700; margin-top: 10px; }
+
+/* ── PUNCH CARD ── */
+.punch-card {
+  margin: 0 20px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 16px;
+}
+.punch-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.punch-title { font-family: var(--font-h); font-size: 14px; font-weight: 800; }
+.punch-sub { font-size: 11px; color: var(--success); font-weight: 700; }
+.punch-dots { display: flex; gap: 7px; flex-wrap: wrap; }
+.punch-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.punch-dot.done { background: var(--primary); border-color: var(--primary); }
+.punch-dot.done i { font-size: 13px; color: #fff; }
+.punch-dot.prize { border-color: var(--primary); border-style: dashed; background: rgba(59,158,255,0.05); }
+
+/* ── HISTORY LIST ── */
+.history-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.hist-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hist-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 16px;
+}
+.hist-icon.done { background: rgba(78,205,196,0.12); color: var(--success); }
+.hist-icon.active { background: var(--primary-glow); color: var(--primary); }
+.hist-info { flex: 1; }
+.hist-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; }
+.hist-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.hist-price { font-family: var(--font-h); font-size: 14px; font-weight: 800; color: var(--primary); }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  height: var(--nav-h);
+  background: rgba(26,26,46,0.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 4px 8px;
+  z-index: 100;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; padding: 8px 4px;
+  background: none; border: none;
+  cursor: pointer; position: relative;
+}
+.nav-item i { font-size: 22px; color: var(--muted); transition: color 0.2s; }
+.nav-item span { font-size: 10px; color: var(--muted); font-family: var(--font-b); font-weight: 500; transition: color 0.2s; }
+.nav-item.active i { color: var(--primary); }
+.nav-item.active span { color: var(--primary); font-weight: 700; }
+.nav-item.active::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 3px; background: var(--primary); border-radius: 3px 3px 0 0;
+}
+
+/* ── FAB ── */
+.fab {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 16px);
+  left: 50%; transform: translateX(-50%);
+  width: 58px; height: 58px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  border: none;
+  box-shadow: 0 4px 20px rgba(59,158,255,0.5), 0 0 0 5px rgba(59,158,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 101;
+}
+.fab i { font-size: 26px; color: #fff; }
+.fab:active { transform: translateX(-50%) scale(0.92); }
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.bottom-sheet {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 20px 40px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-bottom: none;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.34,1.2,0.64,1);
+}
+.modal-overlay.open .bottom-sheet { transform: translateY(0); }
+.sheet-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 auto 20px;
+}
+.sheet-title { font-family: var(--font-h); font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.sheet-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+/* ── FORM CONTROLS ── */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.form-control {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: #fff; font-family: var(--font-b); font-size: 14px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,158,255,0.12); }
+.form-control::placeholder { color: rgba(255,255,255,0.25); }
+.form-control[type=number] { -moz-appearance: textfield; }
+.form-control::-webkit-outer-spin-button,
+.form-control::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* map inside sheet */
+#map {
+  height: 200px; width: 100%;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.map-hint { font-size: 11px; color: var(--primary); margin-bottom: 12px; display: flex; gap: 4px; align-items: center; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  width: 100%; height: 52px;
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  color: #fff; border: none; border-radius: var(--r-btn);
+  font-family: var(--font-h); font-size: 16px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.15s;
+  box-shadow: 0 6px 20px rgba(59,158,255,0.35);
+}
+.btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+.btn-ghost {
+  width: 100%; height: 48px;
+  background: rgba(255,255,255,0.05);
+  color: var(--muted); border: 1px solid var(--border); border-radius: var(--r-btn);
+  font-family: var(--font-h); font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-ghost:active { background: rgba(255,255,255,0.1); }
+.btn-row { display: flex; gap: 10px; margin-top: 20px; }
+
+/* ── SUCCESS OVERLAY ── */
+.success-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.8);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+  text-align: center; padding: 40px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.success-overlay.active { opacity: 1; pointer-events: auto; }
+.success-ring {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--success), #1a9e98);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 40px rgba(78,205,196,0.4);
+  animation: pop-in 0.4s cubic-bezier(0.34,1.5,0.64,1) both;
+}
+@keyframes pop-in {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.success-ring i { font-size: 40px; color: #fff; }
+.success-title { font-family: var(--font-h); font-size: 24px; font-weight: 900; }
+.success-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  top: 56px; left: 50%; transform: translateX(-50%) translateY(-70px);
+  width: calc(100% - 40px); max-width: 440px;
+  background: rgba(26,26,46,0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--primary);
+  border-radius: 14px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  z-index: 999;
+  opacity: 0; transition: all 0.4s cubic-bezier(0.34,1.4,0.64,1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast i { font-size: 20px; flex-shrink: 0; }
+.toast-text { font-size: 13px; font-weight: 600; flex: 1; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--muted);
+}
+.empty-state i { font-size: 48px; opacity: 0.3; margin-bottom: 12px; display: block; }
+.empty-state p { font-size: 14px; }
+
+/* ── SPINNER ── */
+.spinner-sm {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
 
 <script>
-  // Route Protection: hanya customer yang boleh akses
+  // Route Protection
   const currentUser = AuthManager.requireAuth(['customer']);
 </script>
 
-  <div class="app-container">
-    
-    <!-- Splash Screen -->
-    <div class="splash-screen" id="splash">
-      <div class="splash-logo"><i class="ti ti-wash"></i></div>
-      <div class="splash-text">UniWash</div>
+<div class="app">
+
+  <!-- SPLASH -->
+  <div class="splash" id="splash">
+    <div class="splash-icon"><i class="ti ti-washing-machine"></i></div>
+    <div>
+      <div class="splash-title">UNI<span>WASH</span></div>
+      <div class="splash-sub">Campus Laundry</div>
     </div>
-    <!-- HEADER -->
-    <header class="app-header">
-      <div class="header-top">
-        <div class="user-info">
-          <div class="avatar" id="user-avatar">R</div>
-          <div>
-            <div class="greeting" id="user-greeting">Selamat pagi,</div>
-            <div class="name" id="user-name">Pelanggan</div>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button class="icon-btn" onclick="AuthManager.logout()"><i class="ti ti-logout"></i></button>
-        </div>
-      </div>
-    </header>
-
-    <!-- ACTIVE ORDER CARD -->
-    <div class="tracking-card" id="active-order">
-      <div class="track-header">
-        <div class="track-title">Pesanan Aktif</div>
-        <div class="track-id">#LK-2406-0046</div>
-      </div>
-      <div class="track-status-box">
-        <div class="status-icon"><i class="ti ti-wash"></i></div>
-        <div class="status-info">
-          <div class="status-main" id="status-text">Sedang Dicuci</div>
-          <div class="status-desc" id="status-desc">Estimasi selesai: Hari ini, 15:00</div>
-        </div>
-      </div>
-      <div style="margin-top: 16px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--gray-500);">
-        <div style="display:flex; align-items:center; gap:6px;"><i class="ti ti-building-store"></i> Mitra: Bu Siti</div>
-        <div style="display:flex; align-items:center; gap:6px; color: var(--primary);"><i class="ti ti-receipt"></i> Rp 21.000</div>
-      </div>
-    </div>
-
-    <!-- MAIN BODY -->
-    <div class="app-body">
-      
-      <div class="section-title">Layanan Kami</div>
-      <div class="services-grid">
-        <button class="service-btn" onclick="openOrderModal('Kiloan')">
-          <div class="service-icon"><i class="ti ti-shirt"></i></div>
-          <div class="service-label">Cuci Kiloan</div>
-        </button>
-        <button class="service-btn" onclick="openOrderModal('Satuan')">
-          <div class="service-icon"><i class="ti ti-hanger"></i></div>
-          <div class="service-label">Cuci Satuan</div>
-        </button>
-      </div>
-
-      <div class="section-title">Riwayat Pesanan</div>
-      <div class="history-list" id="history-list">
-        <div class="history-item">
-          <div class="hist-left">
-            <div class="hist-icon done"><i class="ti ti-check"></i></div>
-            <div>
-              <div class="hist-title">Cuci Kiloan (4 kg)</div>
-              <div class="hist-date">10 Jun 2025 &bull; Selesai</div>
-            </div>
-          </div>
-          <div class="hist-price">Rp 24.000</div>
-        </div>
-        <div class="history-item">
-          <div class="hist-left">
-            <div class="hist-icon done"><i class="ti ti-check"></i></div>
-            <div>
-              <div class="hist-title">Cuci Satuan (Bedcover)</div>
-              <div class="hist-date">02 Jun 2025 &bull; Selesai</div>
-            </div>
-          </div>
-          <div class="hist-price">Rp 35.000</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- BOTTOM NAV -->
-    <nav class="bottom-nav">
-      <button class="nav-item active">
-        <i class="ti ti-home"></i> Beranda
-      </button>
-      <button class="nav-item">
-        <i class="ti ti-receipt"></i> Aktivitas
-      </button>
-      <button class="nav-item">
-        <i class="ti ti-message"></i> Pesan
-      </button>
-      <button class="nav-item">
-        <i class="ti ti-user"></i> Profil
-      </button>
-    </nav>
-
-    <!-- NEW ORDER MODAL -->
-    <div class="modal-overlay" id="modal-order">
-      <div class="bottom-sheet">
-        <div class="sheet-handle"></div>
-        <h3 style="margin-bottom: 20px; font-weight: 700;">Buat Pesanan Baru</h3>
-        <p style="font-size: 12px; color: var(--gray-500); margin-bottom: 16px;">Kurir kami akan menjemput pakaian kotor ke alamat Anda.</p>
-        
-        <div class="form-group">
-          <label class="form-label">Alamat Penjemputan</label>
-          <input type="text" class="form-control" value="Kost Putri Melati, Jl. Bunga 12" id="order-address">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Estimasi Berat (Kg) / Jumlah</label>
-          <input type="number" class="form-control" placeholder="Bisa dikosongi, kurir akan menimbang" id="order-weight">
-        </div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 24px;">
-          <button class="btn-block" style="background: var(--gray-200); color: var(--gray-800); flex: 1;" onclick="closeOrderModal()">Batal</button>
-          <button class="btn-block" style="flex: 2;" onclick="submitOrder()">Pesan Sekarang</button>
-        </div>
-      </div>
-    </div>
-
+    <div class="splash-tagline">"Bersih itu Gampang, Serius."</div>
+    <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
   </div>
 
-  <script>
-    // Tampilkan data user dari session
-    if (currentUser) {
-      document.getElementById('user-avatar').textContent = currentUser.avatar || currentUser.name[0];
-      document.getElementById('user-name').textContent = currentUser.name;
-      
-      // Greeting berdasarkan waktu
-      const hour = new Date().getHours();
-      let greeting = 'Selamat malam,';
-      if (hour >= 5 && hour < 11) greeting = 'Selamat pagi,';
-      else if (hour >= 11 && hour < 15) greeting = 'Selamat siang,';
-      else if (hour >= 15 && hour < 18) greeting = 'Selamat sore,';
-      document.getElementById('user-greeting').textContent = greeting;
-    }
+  <!-- SCROLLABLE BODY -->
+  <div class="scroll-body">
 
-    // Sembunyikan splash screen setelah 1.5 detik
-    window.onload = () => {
-      setTimeout(() => {
-        const splash = document.getElementById('splash');
-        splash.style.opacity = '0';
-        splash.style.transform = 'scale(1.1)';
-        setTimeout(() => splash.remove(), 500);
-      }, 1500);
-    };
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-left">
+        <div class="avatar" id="user-avatar">R</div>
+        <div>
+          <div class="greet-sub" id="user-greeting">Selamat pagi,</div>
+          <div class="greet-name" id="user-name">Pelanggan 👋</div>
+        </div>
+      </div>
+      <div class="notif-btn">
+        <i class="ti ti-bell"></i>
+        <div class="notif-dot"></div>
+      </div>
+    </div>
 
-    function openOrderModal(type) {
-      document.getElementById('modal-order').classList.add('open');
-      // Set focus to address slightly after open to prevent mobile keyboard layout break
-    }
+    <!-- ACTIVE ORDER CARD -->
+    <div class="active-card" id="active-order" style="display:none">
+      <div class="ac-header">
+        <div class="ac-title">📦 Pesanan Aktif</div>
+        <div class="ac-id" id="ac-id">#LK-0000-0000</div>
+      </div>
+      <div class="ac-steps" id="ac-steps">
+        <div class="ac-step done">
+          <div class="ac-dot done"><i class="ti ti-check" style="font-size:14px"></i></div>
+          <div class="ac-step-lbl">Diambil</div>
+        </div>
+        <div class="ac-line done"></div>
+        <div class="ac-step current">
+          <div class="ac-dot current"><i class="ti ti-washing-machine" style="font-size:14px"></i></div>
+          <div class="ac-step-lbl">Dicuci</div>
+        </div>
+        <div class="ac-line"></div>
+        <div class="ac-step">
+          <div class="ac-dot"><i class="ti ti-wind" style="font-size:14px"></i></div>
+          <div class="ac-step-lbl">Selesai</div>
+        </div>
+        <div class="ac-line"></div>
+        <div class="ac-step">
+          <div class="ac-dot"><i class="ti ti-home" style="font-size:14px"></i></div>
+          <div class="ac-step-lbl">Diantar</div>
+        </div>
+      </div>
+      <div class="ac-footer">
+        <div class="ac-time" id="ac-status-text">⏱ Sedang dalam proses...</div>
+        <div class="ac-link">Detail →</div>
+      </div>
+    </div>
 
-    function closeOrderModal() {
-      document.getElementById('modal-order').classList.remove('open');
-    }
+    <!-- SERVICES -->
+    <div class="section-lbl">Layanan Kami</div>
+    <div class="svc-grid">
+      <div class="svc-card" onclick="openOrderModal('Reguler')">
+        <div class="svc-icon"><i class="ti ti-basket"></i></div>
+        <div class="svc-name">Cuci Reguler</div>
+        <div class="svc-price">Rp 5.000/kg</div>
+      </div>
+      <div class="svc-card" onclick="openOrderModal('Ekspres')">
+        <div class="svc-icon"><i class="ti ti-bolt"></i></div>
+        <div class="svc-name">Express ⚡</div>
+        <div class="svc-price">Rp 8.000/kg</div>
+      </div>
+      <div class="svc-card" onclick="openOrderModal('Setrika')">
+        <div class="svc-icon"><i class="ti ti-hanger"></i></div>
+        <div class="svc-name">Setrika Only</div>
+        <div class="svc-price">Rp 3.000/kg</div>
+      </div>
+      <div class="svc-card" onclick="openOrderModal('Bundel')">
+        <div class="svc-icon"><i class="ti ti-package"></i></div>
+        <div class="svc-name">Bundel</div>
+        <div class="svc-price">Rp 60.000 flat</div>
+      </div>
+    </div>
 
-    async function submitOrder() {
-      const address = document.getElementById('order-address').value;
-      const weight = document.getElementById('order-weight').value || '1';
-      
-      closeOrderModal();
-      
-      const res = await DB.createOrder({
-        customerId: currentUser.id,
-        customerName: currentUser.name,
-        service: 'Reguler', // Default for now
-        weight: weight,
-        address: address,
-        partnerId: 'usr_partner_001',
-        partnerName: 'Laundry Bu Siti'
-      });
-      
-      if (res.success) {
-        // Tampilkan modal sukses
-        const successModal = document.createElement('div');
-        successModal.className = 'success-overlay active';
-        successModal.innerHTML = `
-          <div class="success-icon"><i class="ti ti-check"></i></div>
-          <h2 style="margin-bottom: 8px; color: var(--gray-900);">Pesanan Berhasil!</h2>
-          <p style="color: var(--gray-500); font-size: 14px; margin-bottom: 32px;">Kurir sedang menuju lokasi Anda untuk menjemput pakaian.</p>
-          <button class="btn-block" style="width: 80%;" onclick="this.parentElement.remove()">Tutup</button>
-        `;
-        document.querySelector('.app-container').appendChild(successModal);
-      } else {
-        alert('Gagal membuat pesanan: ' + res.error);
-      }
-    }
+    <!-- PROMO -->
+    <div class="section-lbl">Promo & Info</div>
+    <div class="promo-row">
+      <div class="promo-card promo-1">
+        <div class="promo-badge">⚡ Hari ini</div>
+        <div class="promo-ttl">Gratis Antar-Jemput!</div>
+        <div class="promo-desc">Berlaku untuk semua layanan hari ini saja</div>
+        <div class="promo-cta">Klaim sekarang →</div>
+      </div>
+      <div class="promo-card promo-2">
+        <div class="promo-ttl">Ajak Teman 🎁</div>
+        <div class="promo-desc">Kamu + temanmu masing-masing dapat 100 pts gratis!</div>
+        <div class="promo-cta" style="color:#C084FC">Share link →</div>
+      </div>
+    </div>
 
-    // Listen untuk pesanan aktif
-    DB.listenOrders(orders => {
-      const activeOrder = document.getElementById('active-order');
-      if (!orders || orders.length === 0) {
-        activeOrder.style.display = 'none';
-        return;
-      }
-      
-      // Ambil order pertama yang belum selesai
-      const order = orders.find(o => o.statusGroup !== 'selesai');
-      
-      if (!order) {
-        activeOrder.style.display = 'none';
-        return;
-      }
-      
-      activeOrder.style.display = 'flex';
-      
-      const trackId = activeOrder.querySelector('.track-id');
-      const statusText = document.getElementById('status-text');
-      const statusDesc = document.getElementById('status-desc');
-      const icon = activeOrder.querySelector('.status-icon i');
-      
-      trackId.textContent = order.id;
-      
-      if (order.status === 'antri') {
-        statusText.textContent = 'Mencari Kurir';
-        statusDesc.textContent = 'Menunggu kurir menerima pesanan...';
-        icon.className = 'ti ti-bike';
-      } else if (order.status === 'dijemput') {
-        statusText.textContent = 'Kurir Menuju Lokasi';
-        statusDesc.textContent = order.courierName + ' sedang menuju ke tempatmu.';
-        icon.className = 'ti ti-map-pin';
-      } else if (order.statusGroup === 'proses') {
-        statusText.textContent = 'Pakaian Sedang Diproses';
-        statusDesc.textContent = 'Mitra: ' + order.partnerName;
-        icon.className = 'ti ti-wash';
-      } else if (order.status === 'diantar') {
-        statusText.textContent = 'Kurir Mengantar Kembali';
-        statusDesc.textContent = order.courierName + ' sedang mengantar pakaian bersihmu.';
-        icon.className = 'ti ti-truck-delivery';
-      }
-    }, { customerId: currentUser.id });
-  </script>
+    <!-- PUNCH CARD -->
+    <div class="section-lbl">Punch Card 🥊</div>
+    <div class="punch-card">
+      <div class="punch-head">
+        <div class="punch-title">Kartu Cuci</div>
+        <div class="punch-sub">7/10 — 3 lagi gratis!</div>
+      </div>
+      <div class="punch-dots">
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot done"><i class="ti ti-check"></i></div>
+        <div class="punch-dot"></div>
+        <div class="punch-dot"></div>
+        <div class="punch-dot prize"><i class="ti ti-gift" style="font-size:14px;color:var(--primary)"></i></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="section-lbl">Riwayat Pesanan <a>Lihat semua</a></div>
+    <div class="history-list" id="history-list">
+      <div class="empty-state" id="history-empty">
+        <i class="ti ti-receipt-off"></i>
+        <p>Belum ada riwayat pesanan</p>
+      </div>
+    </div>
+
+  </div><!-- end scroll-body -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active">
+      <i class="ti ti-home"></i><span>Beranda</span>
+    </button>
+    <button class="nav-item" onclick="openOrderModal('Reguler')">
+      <i class="ti ti-plus"></i><span>Pesan</span>
+    </button>
+    <button class="nav-item">
+      <i class="ti ti-package"></i><span>Pesananku</span>
+    </button>
+    <button class="nav-item">
+      <i class="ti ti-gift"></i><span>Reward</span>
+    </button>
+    <button class="nav-item" onclick="AuthManager.logout()">
+      <i class="ti ti-logout"></i><span>Keluar</span>
+    </button>
+  </nav>
+
+</div><!-- end .app -->
+
+<!-- NEW ORDER MODAL -->
+<div class="modal-overlay" id="modal-order">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Buat Pesanan 🧺</div>
+    <div class="sheet-sub" id="sheet-svc-desc">Layanan: Cuci Reguler — Rp 5.000/kg</div>
+
+    <div class="form-group">
+      <div class="form-label">Titik Lokasi Penjemputan</div>
+      <div id="map"></div>
+      <div class="map-hint"><i class="ti ti-info-circle"></i> Geser pin merah ke lokasi Anda</div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Detail Alamat</div>
+      <input type="text" class="form-control" id="order-address" value="Mencari lokasi...">
+      <input type="hidden" id="order-lat">
+      <input type="hidden" id="order-lng">
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Estimasi Berat (kg)</div>
+      <input type="number" class="form-control" id="order-weight" placeholder="Contoh: 3 (kurir akan menimbang ulang)" min="1" max="30">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" style="flex:1" onclick="closeOrderModal()">Batal</button>
+      <button class="btn-primary" style="flex:2" id="btn-order" onclick="submitOrder()">
+        <i class="ti ti-check"></i> Pesan Sekarang
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-ring"><i class="ti ti-check"></i></div>
+  <div class="success-title">Pesanan Berhasil! 🎉</div>
+  <div class="success-desc">Kurir segera menuju lokasimu.<br>Pantau status di pesanan aktif ya!</div>
+  <button class="btn-primary" style="margin-top:16px;max-width:240px" onclick="closeSuccess()">
+    <i class="ti ti-home"></i> Ke Beranda
+  </button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <i class="ti ti-check" id="toast-icon"></i>
+  <div class="toast-text" id="toast-text">Sukses!</div>
+</div>
+
+<script>
+// ══════════════════════════════
+//  SPLASH
+// ══════════════════════════════
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').remove(), 500);
+  }, 1600);
+});
+
+// ══════════════════════════════
+//  USER INFO
+// ══════════════════════════════
+if (currentUser) {
+  document.getElementById('user-avatar').textContent = currentUser.avatar || currentUser.name.charAt(0).toUpperCase();
+  const hour = new Date().getHours();
+  let greet = hour < 11 ? 'Selamat pagi,' : hour < 15 ? 'Selamat siang,' : hour < 18 ? 'Selamat sore,' : 'Selamat malam,';
+  document.getElementById('user-greeting').textContent = greet;
+  document.getElementById('user-name').textContent = currentUser.name + ' 👋';
+}
+
+// ══════════════════════════════
+//  MAP LOGIC
+// ══════════════════════════════
+let map = null, marker = null;
+let selectedService = 'Reguler';
+
+function initMap() {
+  if (map) { setTimeout(() => map.invalidateSize(), 100); return; }
+  const defLat = -7.982, defLng = 112.630;
+  map = L.map('map').setView([defLat, defLng], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap'
+  }).addTo(map);
+  const icon = L.icon({
+    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25,41], iconAnchor: [12,41], shadowSize: [41,41]
+  });
+  marker = L.marker([defLat, defLng], { icon, draggable: true }).addTo(map);
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(p => {
+      map.setView([p.coords.latitude, p.coords.longitude], 16);
+      marker.setLatLng([p.coords.latitude, p.coords.longitude]);
+      reverseGeocode(p.coords.latitude, p.coords.longitude);
+    }, () => reverseGeocode(defLat, defLng));
+  } else { reverseGeocode(defLat, defLng); }
+  marker.on('dragend', e => {
+    const pos = e.target.getLatLng();
+    map.panTo(pos);
+    reverseGeocode(pos.lat, pos.lng);
+  });
+  setTimeout(() => map.invalidateSize(), 300);
+}
+
+async function reverseGeocode(lat, lng) {
+  document.getElementById('order-lat').value = lat;
+  document.getElementById('order-lng').value = lng;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const d = await r.json();
+    if (d && d.display_name) document.getElementById('order-address').value = d.display_name;
+  } catch {
+    document.getElementById('order-address').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+}
+
+// ══════════════════════════════
+//  MODAL
+// ══════════════════════════════
+const SVC_DESC = {
+  Reguler: 'Layanan: Cuci Reguler — Rp 5.000/kg · 24 jam',
+  Ekspres: 'Layanan: Express ⚡ — Rp 8.000/kg · 6 jam',
+  Setrika: 'Layanan: Setrika Only — Rp 3.000/kg',
+  Bundel:  'Layanan: Bundel — Rp 60.000 flat (all items)',
+};
+
+function openOrderModal(svc) {
+  selectedService = svc;
+  document.getElementById('sheet-svc-desc').textContent = SVC_DESC[svc] || SVC_DESC.Reguler;
+  document.getElementById('modal-order').classList.add('open');
+  initMap();
+}
+function closeOrderModal() {
+  document.getElementById('modal-order').classList.remove('open');
+}
+
+// ══════════════════════════════
+//  SUBMIT ORDER
+// ══════════════════════════════
+async function submitOrder() {
+  const address = document.getElementById('order-address').value;
+  const weight  = document.getElementById('order-weight').value || '1';
+  const lat     = parseFloat(document.getElementById('order-lat').value) || null;
+  const lng     = parseFloat(document.getElementById('order-lng').value) || null;
+  const btn     = document.getElementById('btn-order');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner-sm"></div> Memproses...';
+
+  const res = await DB.createOrder({
+    customerId:   currentUser.id,
+    customerName: currentUser.name,
+    service:      selectedService,
+    weight:       weight,
+    address:      address,
+    lat, lng
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-check"></i> Pesan Sekarang';
+
+  if (res.success) {
+    closeOrderModal();
+    document.getElementById('success-overlay').classList.add('active');
+  } else {
+    showToast('error', res.error || 'Gagal membuat pesanan.');
+  }
+}
+
+function closeSuccess() {
+  document.getElementById('success-overlay').classList.remove('active');
+}
+
+// ══════════════════════════════
+//  LISTEN ORDERS (REALTIME)
+// ══════════════════════════════
+const STATUS_LABEL = {
+  antri:       '⏳ Menunggu kurir menjemput...',
+  dijemput:    '🏍️ Kurir sedang menuju lokasi...',
+  dicuci:      '🫧 Sedang dicuci...',
+  dikeringkan: '💨 Sedang dikeringkan & dilipat...',
+  diantar:     '🚀 Kurir mengantar ke lokasi Anda!',
+  selesai:     '✅ Cucian sudah sampai! Selamat menikmati.',
+};
+
+const STATUS_STEP = {
+  antri:       0,
+  dijemput:    1,
+  dicuci:      2,
+  dikeringkan: 2,
+  diantar:     3,
+  selesai:     4,
+};
+
+DB.listenOrders(orders => {
+  const activeEl  = document.getElementById('active-order');
+  const histEl    = document.getElementById('history-list');
+  const histEmpty = document.getElementById('history-empty');
+
+  const active   = orders.find(o => o.statusGroup !== 'selesai');
+  const history  = orders.filter(o => o.statusGroup === 'selesai');
+
+  // Active order card
+  if (active) {
+    activeEl.style.display = '';
+    document.getElementById('ac-id').textContent = active.id;
+    document.getElementById('ac-status-text').textContent = STATUS_LABEL[active.status] || active.status;
+
+    // Animate steps
+    const stepIdx = STATUS_STEP[active.status] || 0;
+    const dots = activeEl.querySelectorAll('.ac-dot');
+    const lines = activeEl.querySelectorAll('.ac-line');
+    dots.forEach((d, i) => {
+      d.className = 'ac-dot' + (i < stepIdx ? ' done' : i === stepIdx ? ' current' : '');
+      d.parentElement.className = 'ac-step' + (i < stepIdx ? ' done' : i === stepIdx ? ' current' : '');
+    });
+    lines.forEach((l, i) => l.className = 'ac-line' + (i < stepIdx ? ' done' : ''));
+  } else {
+    activeEl.style.display = 'none';
+  }
+
+  // History
+  if (history.length > 0) {
+    histEmpty.style.display = 'none';
+    // Remove existing history items
+    histEl.querySelectorAll('.hist-item').forEach(el => el.remove());
+    history.slice(0, 5).forEach(o => {
+      const el = document.createElement('div');
+      el.className = 'hist-item';
+      const d = new Date(o.createdAt);
+      const dateStr = d.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+      el.innerHTML = `
+        <div class="hist-icon done"><i class="ti ti-check"></i></div>
+        <div class="hist-info">
+          <div class="hist-name">${o.service} (${o.weight} kg)</div>
+          <div class="hist-date">${dateStr} · Selesai</div>
+        </div>
+        <div class="hist-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+      `;
+      histEl.appendChild(el);
+    });
+  } else {
+    histEmpty.style.display = '';
+  }
+}, { customerId: currentUser?.id });
+
+// ══════════════════════════════
+//  TOAST
+// ══════════════════════════════
+let toastT;
+function showToast(type, msg) {
+  const toast = document.getElementById('toast');
+  const icon  = document.getElementById('toast-icon');
+  const text  = document.getElementById('toast-text');
+  icon.className = type === 'error' ? 'ti ti-alert-circle' : 'ti ti-check';
+  icon.style.color = type === 'error' ? 'var(--error)' : 'var(--success)';
+  text.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+</script>
 </body>
 </html>

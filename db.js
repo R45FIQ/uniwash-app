@@ -46,8 +46,8 @@ const DB = (() => {
   ];
 
   const DEMO_PARTNERS = [
-    { id: 'usr_partner_001', name: 'Laundry Bu Siti', storeName: 'Laundry Berkah KBT', type: 'Mitra utama',    address: 'Jl. Tlogomas No. 7', capacity: 30, commission: 15, totalOrders: 72, status: 'Aktif' },
-    { id: 'usr_partner_002', name: 'Laundry Pak Heru', storeName: 'Laundry Pak Heru',  type: 'Mitra cadangan', address: 'Jl. Dinoyo No. 24',   capacity: 20, commission: 18, totalOrders: 24, status: 'Aktif' },
+    { id: 'usr_partner_001', name: 'Laundry Bu Siti', storeName: 'Laundry Berkah KBT', type: 'Mitra utama',    address: 'Jl. Tlogomas No. 7', capacity: 30, commission: 15, totalOrders: 72, status: 'Aktif', lat: -7.934, lng: 112.605 },
+    { id: 'usr_partner_002', name: 'Laundry Pak Heru', storeName: 'Laundry Pak Heru',  type: 'Mitra cadangan', address: 'Jl. Dinoyo No. 24',   capacity: 20, commission: 18, totalOrders: 24, status: 'Aktif', lat: -7.940, lng: 112.608 },
   ];
 
   const LS_ORDERS_KEY  = 'lk_orders';
@@ -80,6 +80,61 @@ const DB = (() => {
   }
 
   // ═══════════════════════════════════════
+  //  ALGORITMA AUTO-ASSIGN (FASE 3)
+  // ═══════════════════════════════════════
+
+  function _haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius bumi dalam KM
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // jarak dalam KM
+  }
+
+  async function _findBestMatch(customerLat, customerLng) {
+    const partners = await getPartners();
+    const couriers = await getCouriers();
+
+    // Cari partner aktif terdekat
+    let bestPartner = null;
+    let minDistance = Infinity;
+
+    partners.forEach(p => {
+      if (p.status === 'Aktif' && p.lat && p.lng) {
+        const dist = _haversineDistance(customerLat, customerLng, p.lat, p.lng);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestPartner = p;
+        }
+      }
+    });
+
+    // Default ke partner pertama jika gagal mapping
+    if (!bestPartner && partners.length > 0) bestPartner = partners[0];
+
+    // Cari kurir standby dengan pesanan tersedikit hari ini
+    let bestCourier = null;
+    let minLoad = Infinity;
+
+    couriers.forEach(c => {
+      if (c.status === 'Standby') {
+        if (c.todayOrders < minLoad) {
+          minLoad = c.todayOrders;
+          bestCourier = c;
+        }
+      }
+    });
+
+    // Fallback kurir aktif
+    if (!bestCourier && couriers.length > 0) bestCourier = couriers[0];
+
+    return { partner: bestPartner, courier: bestCourier };
+  }
+
+  // ═══════════════════════════════════════
   //  ORDERS
   // ═══════════════════════════════════════
 
@@ -91,6 +146,19 @@ const DB = (() => {
   async function createOrder(data) {
     const orderId = _generateOrderId();
     const totalPrice = _calcPrice(data.service, parseFloat(data.weight));
+    
+    // Auto-Assign Fase 3
+    let match = { partner: null, courier: null };
+    if (data.lat && data.lng) {
+      match = await _findBestMatch(data.lat, data.lng);
+    }
+
+    const partnerId   = match.partner ? match.partner.id : data.partnerId;
+    const partnerName = match.partner ? match.partner.storeName : data.partnerName;
+    const courierId   = match.courier ? match.courier.id : null;
+    const courierName = match.courier ? match.courier.name : '—';
+    const autoAssigned = !!(match.partner || match.courier);
+
     const order = {
       id:           orderId,
       customerId:   data.customerId,
@@ -98,15 +166,18 @@ const DB = (() => {
       service:      data.service,
       weight:       parseFloat(data.weight),
       totalPrice:   totalPrice,
-      address:      data.address || '-',
-      courierId:    null,
-      courierName:  '—',
-      partnerId:    data.partnerId || 'usr_partner_001',
-      partnerName:  data.partnerName || 'Bu Siti',
+      address:      data.address,
+      lat:          data.lat || null,
+      lng:          data.lng || null,
+      partnerId:    partnerId,
+      partnerName:  partnerName,
+      courierId:    courierId,
+      courierName:  courierName,
+      autoAssigned: autoAssigned,
       status:       'antri',
       statusGroup:  'antri',
       createdAt:    new Date().toISOString(),
-      updatedAt:    new Date().toISOString(),
+      updatedAt:    new Date().toISOString()
     };
 
     if (FIREBASE_ENABLED && _db) {
