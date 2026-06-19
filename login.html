@@ -506,6 +506,36 @@ body::before {
 .divider-line { flex: 1; height: 1px; background: var(--border); }
 .divider-text { font-size: 11px; color: rgba(160,168,184,0.4); font-weight: 600; white-space: nowrap; }
 
+/* ── GOOGLE BUTTON ── */
+.btn-google {
+  width: 100%; height: 50px;
+  background: #fff;
+  color: #3c4043;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: var(--r-btn);
+  font-family: var(--font-b); font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: all 0.18s;
+  position: relative; overflow: hidden;
+}
+.btn-google:hover {
+  background: #f8f9fa;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  transform: translateY(-1px);
+}
+.btn-google:active { transform: scale(0.97); opacity: 0.9; }
+.btn-google:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-google-icon {
+  width: 20px; height: 20px; flex-shrink: 0;
+}
+
+.btn-google-loading {
+  display: none; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 13px;
+}
+
 /* ── FORGOT PASSWORD VIEW ── */
 .forgot-icon-wrap {
   width: 64px; height: 64px; border-radius: 18px;
@@ -734,9 +764,26 @@ body::before {
 
       <div class="divider">
         <div class="divider-line"></div>
-        <div class="divider-text">atau</div>
+        <div class="divider-text">atau lanjutkan dengan</div>
         <div class="divider-line"></div>
       </div>
+
+      <!-- GOOGLE SIGN-IN BUTTON (hanya untuk Pelanggan) -->
+      <button
+        class="btn-google"
+        id="btn-google-login"
+        onclick="handleGoogleLogin()"
+        title="Masuk dengan akun Google Anda"
+        style="display:none"
+      >
+        <svg class="btn-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Masuk dengan Google
+      </button>
 
       <div class="switch-row">
         Belum punya akun? <a onclick="showView('register')">Daftar di sini</a>
@@ -929,6 +976,10 @@ function selectRole(role) {
   document.getElementById('hint-email').textContent    = cfg.email;
   document.getElementById('hint-password').textContent = cfg.password;
 
+  // Tampilkan tombol Google HANYA untuk Pelanggan
+  const googleBtn = document.getElementById('btn-google-login');
+  if (googleBtn) googleBtn.style.display = role === 'customer' ? 'flex' : 'none';
+
   // Reset forms
   document.getElementById('login-form').reset();
   document.getElementById('register-form').reset();
@@ -936,6 +987,7 @@ function selectRole(role) {
   showView('login');
   setTimeout(() => document.getElementById('login-email').focus(), 320);
 }
+
 
 // ══════════════════════════
 //  HANDLE LOGIN
@@ -964,6 +1016,41 @@ function handleLogin(e) {
       btn.innerHTML = '<i class="ti ti-login"></i> Masuk';
     }
   }, 600);
+}
+
+// ══════════════════════════
+//  HANDLE GOOGLE LOGIN
+// ══════════════════════════
+async function handleGoogleLogin() {
+  const btn = document.getElementById('btn-google-login');
+  btn.disabled = true;
+  btn.innerHTML = `
+    <svg class="btn-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Menghubungkan ke Google...`;
+
+  const result = await AuthManager.loginWithGoogle();
+
+  if (result.success) {
+    document.getElementById('loading-text').textContent = 'Memuat Halaman Pelanggan...';
+    document.getElementById('loading').classList.add('active');
+    setTimeout(() => window.location.href = 'customer.html', 1000);
+  } else {
+    if (result.error) showMsg('login-error', result.error); // null = user closed popup, silent
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg class="btn-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Masuk dengan Google`;
+  }
 }
 
 // ══════════════════════════

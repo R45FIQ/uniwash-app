@@ -35,6 +35,110 @@ const AuthManager = (() => {
     }
   }
 
+  // ═══════════════════════════════
+  //  GOOGLE SIGN-IN
+  // ═══════════════════════════════
+
+  /**
+   * Login / Register menggunakan Google OAuth.
+   * Hanya untuk role 'customer' — role admin/partner/courier
+   * harus pakai email + password agar bisa diverifikasi manual.
+   *
+   * Flow:
+   *  1. Popup Google Pilih Akun
+   *  2. Baca profil dari Firestore (jika sudah pernah daftar)
+   *  3. Jika belum ada → auto-buat profil dengan role='customer'
+   *  4. Simpan session ke localStorage dan return
+   *
+   * @returns {Promise<{success, user?, error?}>}
+   */
+  async function loginWithGoogle() {
+    if (!FIREBASE_ENABLED || !_firebaseAuth) {
+      return { success: false, error: 'Google Sign-In hanya tersedia dalam mode Firebase. Aktifkan Firebase terlebih dahulu.' };
+    }
+
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      const cred = await _firebaseAuth.signInWithPopup(provider);
+      const uid  = cred.user.uid;
+
+      // Cek apakah profil sudah ada di Firestore
+      const db   = firebase.firestore();
+      const ref  = db.collection('users').doc(uid);
+      let profile = null;
+
+      try {
+        const doc = await ref.get();
+        if (doc.exists) {
+          profile = doc.data();
+
+          // Jika profil sudah ada tapi bukan customer, tolak
+          if (profile.role && profile.role !== 'customer') {
+            await _firebaseAuth.signOut();
+            return {
+              success: false,
+              error: `Akun Google ini terdaftar sebagai "${profile.role}". Gunakan login email & password untuk role tersebut.`
+            };
+          }
+        }
+      } catch (e) {
+        console.warn('[Google Auth] Firestore read error:', e);
+      }
+
+      // Auto-buat profil baru jika belum ada
+      if (!profile) {
+        const googleName  = cred.user.displayName || cred.user.email.split('@')[0];
+        profile = {
+          uid,
+          name:      googleName,
+          email:     cred.user.email,
+          role:      'customer',
+          avatar:    _getInitials(googleName),
+          photoURL:  cred.user.photoURL || null,
+          provider:  'google',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+        try {
+          await ref.set(profile);
+        } catch (e) {
+          console.warn('[Google Auth] Firestore write error:', e);
+        }
+      }
+
+      const session = {
+        id:        uid,
+        name:      profile.name      || cred.user.displayName,
+        email:     cred.user.email,
+        role:      profile.role      || 'customer',
+        avatar:    profile.avatar    || _getInitials(profile.name || ''),
+        photoURL:  profile.photoURL  || cred.user.photoURL || null,
+        storeName: profile.storeName || null,
+        phone:     profile.phone     || null,
+        loginAt:   new Date().toISOString(),
+        source:    'google',
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+      return { success: true, user: session };
+
+    } catch (err) {
+      // User menutup popup
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        return { success: false, error: null }; // silent cancel
+      }
+      const MAP = {
+        'auth/popup-blocked':          'Popup diblokir browser. Izinkan popup untuk domain ini.',
+        'auth/account-exists-with-different-credential': 'Email ini sudah terdaftar dengan metode lain. Gunakan login email & password.',
+        'auth/network-request-failed': 'Tidak ada koneksi internet.',
+      };
+      return { success: false, error: MAP[err.code] || `Google Sign-In gagal (${err.code}).` };
+    }
+  }
+
   // ─── INIT localStorage demo accounts ───
   function _initUsers() {
     const existing = localStorage.getItem(USERS_KEY);
@@ -350,5 +454,5 @@ const AuthManager = (() => {
   _initFirebaseAuth();
   _initUsers();
 
-  return { login, register, logout, getCurrentUser, requireAuth, redirectIfLoggedIn };
+  return { login, register, logout, getCurrentUser, requireAuth, redirectIfLoggedIn, loginWithGoogle };
 })();
