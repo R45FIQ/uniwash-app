@@ -443,6 +443,11 @@ html, body {
 .toast i { font-size: 20px; flex-shrink: 0; }
 .toast-text { font-size: 13px; font-weight: 600; flex: 1; }
 
+/* ── VIEW SECTIONS ── */
+.view-section { display: none; flex-direction: column; flex: 1; height: 100%; overflow: hidden; animation: fadeIn 0.3s ease; }
+.view-section.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
 /* ── EMPTY STATE ── */
 .empty-state {
   text-align: center; padding: 40px 20px; color: var(--muted);
