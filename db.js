@@ -153,10 +153,10 @@ const DB = (() => {
       match = await _findBestMatch(data.lat, data.lng);
     }
 
-    const partnerId   = match.partner ? match.partner.id : data.partnerId;
-    const partnerName = match.partner ? match.partner.storeName : data.partnerName;
-    const courierId   = match.courier ? match.courier.id : null;
-    const courierName = match.courier ? match.courier.name : '—';
+    const partnerId   = match.partner ? match.partner.id : (data.partnerId || null);
+    const partnerName = match.partner ? match.partner.storeName : (data.partnerName || '—');
+    const courierId   = match.courier ? match.courier.id : (data.courierId || null);
+    const courierName = match.courier ? match.courier.name : (data.courierName || '—');
     const autoAssigned = !!(match.partner || match.courier);
 
     const order = {
