@@ -885,13 +885,13 @@ DB.listenOrders(orders => {
       history.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
              .slice(0, 3).forEach(o => {
         histEl.innerHTML += `
-          <div class="h-card">
-            <div class="h-icon"><i class="ti ti-check"></i></div>
-            <div class="h-info">
-              <div class="h-id">#${o.id}</div>
-              <div class="h-status">${o.service} (${o.weight} kg)</div>
+          <div class="hist-item">
+            <div class="hist-icon done"><i class="ti ti-check"></i></div>
+            <div class="hist-info">
+              <div class="hist-name">#${o.id} - ${o.service}</div>
+              <div class="hist-date">${o.weight} kg</div>
             </div>
-            <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+            <div class="hist-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
           </div>
         `;
       });
@@ -907,15 +907,18 @@ DB.listenOrders(orders => {
     } else {
       allOrders.forEach(o => {
         const isDone = (o.statusGroup === 'selesai' || o.statusGroup === 'batal');
-        const iconColor = isDone ? 'color: var(--success);' : 'color: var(--primary);';
+        const iconClass = isDone ? 'hist-icon done' : 'hist-icon active';
+        const d = new Date(o.createdAt);
+        const dateStr = d.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+        
         pList.innerHTML += `
-          <div class="h-card" style="margin-bottom:12px;">
-            <div class="h-icon" style="${iconColor}"><i class="ti ti-basket"></i></div>
-            <div class="h-info">
-              <div class="h-id">#${o.id}</div>
-              <div class="h-status" style="font-size:12px; opacity:0.8;">${o.status.toUpperCase()}</div>
+          <div class="hist-item">
+            <div class="${iconClass}"><i class="ti ti-basket"></i></div>
+            <div class="hist-info">
+              <div class="hist-name">#${o.id}</div>
+              <div class="hist-date">${o.status.toUpperCase()} · ${dateStr}</div>
             </div>
-            <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+            <div class="hist-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
           </div>
         `;
       });
