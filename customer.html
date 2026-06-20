@@ -852,12 +852,12 @@ const STATUS_STEP = {
 DB.listenOrders(orders => {
   const activeEl  = document.getElementById('active-order');
   const histEl    = document.getElementById('history-list');
-  const histEmpty = document.getElementById('history-empty');
+  const pList     = document.getElementById('pesananku-list');
 
-  const active   = orders.find(o => o.statusGroup !== 'selesai');
-  const history  = orders.filter(o => o.statusGroup === 'selesai');
+  const active   = orders.find(o => o.statusGroup !== 'selesai' && o.statusGroup !== 'batal');
+  const history  = orders.filter(o => o.statusGroup === 'selesai' || o.statusGroup === 'batal');
 
-  // Active order card
+  // 1. Active order card
   if (active) {
     activeEl.style.display = '';
     document.getElementById('ac-id').textContent = active.id;
@@ -865,48 +865,6 @@ DB.listenOrders(orders => {
 
     // Animate steps
     const stepIdx = STATUS_STEP[active.status] || 0;
-    const hList = document.getElementById('history-list');
-    hList.innerHTML = '';
-    const pList = document.getElementById('pesananku-list');
-    if (pList) pList.innerHTML = '';
-
-    if (history.length === 0) {
-      hList.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
-    } else {
-      // Only show 3 latest in history-list
-      history.slice(0, 3).forEach(o => {
-        hList.innerHTML += `
-          <div class="h-card">
-            <div class="h-icon"><i class="ti ti-basket"></i></div>
-            <div class="h-info">
-              <div class="h-id">#${o.id}</div>
-              <div class="h-status">${o.status.toUpperCase()}</div>
-            </div>
-            <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
-          </div>
-        `;
-      });
-    }
-
-    if (pList) {
-      const allOrders = orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-      if (allOrders.length === 0) {
-        pList.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
-      } else {
-        allOrders.forEach(o => {
-          pList.innerHTML += `
-            <div class="h-card" style="margin-bottom:12px;">
-              <div class="h-icon"><i class="ti ti-basket"></i></div>
-              <div class="h-info">
-                <div class="h-id">#${o.id}</div>
-                <div class="h-status">${o.status.toUpperCase()}</div>
-              </div>
-              <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
-            </div>
-          `;
-        });
-      }
-    }
     const dots = activeEl.querySelectorAll('.ac-dot');
     const lines = activeEl.querySelectorAll('.ac-line');
     dots.forEach((d, i) => {
@@ -918,28 +876,50 @@ DB.listenOrders(orders => {
     activeEl.style.display = 'none';
   }
 
-  // History
-  if (history.length > 0) {
-    histEmpty.style.display = 'none';
-    // Remove existing history items
-    histEl.querySelectorAll('.hist-item').forEach(el => el.remove());
-    history.slice(0, 5).forEach(o => {
-      const el = document.createElement('div');
-      el.className = 'hist-item';
-      const d = new Date(o.createdAt);
-      const dateStr = d.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
-      el.innerHTML = `
-        <div class="hist-icon done"><i class="ti ti-check"></i></div>
-        <div class="hist-info">
-          <div class="hist-name">${o.service} (${o.weight} kg)</div>
-          <div class="hist-date">${dateStr} · Selesai</div>
-        </div>
-        <div class="hist-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
-      `;
-      histEl.appendChild(el);
-    });
-  } else {
-    histEmpty.style.display = '';
+  // 2. Beranda Preview (3 recent history)
+  if (histEl) {
+    histEl.innerHTML = '';
+    if (history.length === 0) {
+      histEl.innerHTML = '<div class="empty-state">Belum ada riwayat pesanan.</div>';
+    } else {
+      history.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+             .slice(0, 3).forEach(o => {
+        histEl.innerHTML += `
+          <div class="h-card">
+            <div class="h-icon"><i class="ti ti-check"></i></div>
+            <div class="h-info">
+              <div class="h-id">#${o.id}</div>
+              <div class="h-status">${o.service} (${o.weight} kg)</div>
+            </div>
+            <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+          </div>
+        `;
+      });
+    }
+  }
+
+  // 3. Pesananku Full List
+  if (pList) {
+    pList.innerHTML = '';
+    const allOrders = [...orders].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (allOrders.length === 0) {
+      pList.innerHTML = '<div class="empty-state">Belum ada pesanan sama sekali.</div>';
+    } else {
+      allOrders.forEach(o => {
+        const isDone = (o.statusGroup === 'selesai' || o.statusGroup === 'batal');
+        const iconColor = isDone ? 'color: var(--success);' : 'color: var(--primary);';
+        pList.innerHTML += `
+          <div class="h-card" style="margin-bottom:12px;">
+            <div class="h-icon" style="${iconColor}"><i class="ti ti-basket"></i></div>
+            <div class="h-info">
+              <div class="h-id">#${o.id}</div>
+              <div class="h-status" style="font-size:12px; opacity:0.8;">${o.status.toUpperCase()}</div>
+            </div>
+            <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+          </div>
+        `;
+      });
+    }
   }
 }, { customerId: currentUser?.id });
 
