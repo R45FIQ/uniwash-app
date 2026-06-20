@@ -229,13 +229,16 @@ const DB = (() => {
   async function getOrders(filters = {}) {
     if (FIREBASE_ENABLED && _db) {
       try {
-        let query = _db.collection('orders').orderBy('createdAt', 'desc');
+        let query = _db.collection('orders');
         if (filters.partnerId)  query = query.where('partnerId', '==', filters.partnerId);
         if (filters.courierId)  query = query.where('courierId', '==', filters.courierId);
         if (filters.customerId) query = query.where('customerId', '==', filters.customerId);
         if (filters.status)     query = query.where('status', '==', filters.status);
         const snap = await query.get();
-        return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        let orders = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        // Sort manually to avoid Firebase composite index requirement
+        orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return orders;
       } catch (e) {
         console.error('getOrders error:', e);
         return [];
@@ -258,13 +261,15 @@ const DB = (() => {
    */
   function listenOrders(callback, filters = {}) {
     if (FIREBASE_ENABLED && _db) {
-      let query = _db.collection('orders').orderBy('createdAt', 'desc');
+      let query = _db.collection('orders');
       if (filters.partnerId)  query = query.where('partnerId',  '==', filters.partnerId);
       if (filters.courierId)  query = query.where('courierId',  '==', filters.courierId);
       if (filters.customerId) query = query.where('customerId', '==', filters.customerId);
 
       const unsubscribe = query.onSnapshot(snap => {
-        const orders = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        let orders = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        // Sort manually to avoid Firebase composite index requirement
+        orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
         callback(orders);
       }, err => console.error('listenOrders error:', err));
 
