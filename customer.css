@@ -219,3 +219,8 @@
     .success-icon { width: 80px; height: 80px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 20px; transform: scale(0); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); transition-delay: 0.1s; }
     .success-overlay.active .success-icon { transform: scale(1); }
   
+
+/* -- VIEW SECTIONS -- */
+.view-section { display: none; animation: fadeIn 0.3s ease; padding-bottom: 80px; }
+.view-section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

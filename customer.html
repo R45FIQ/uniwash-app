@@ -482,139 +482,148 @@ html, body {
     <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
   </div>
 
-  <!-- SCROLLABLE BODY -->
-  <div class="scroll-body">
+  <!-- BERANDA VIEW -->
+  <div id="view-beranda" class="view-section active">
+    <!-- SCROLLABLE BODY -->
+    <div class="scroll-body">
 
-    <!-- HEADER -->
-    <div class="header">
-      <div class="header-left">
-        <div class="avatar" id="user-avatar">R</div>
-        <div>
-          <div class="greet-sub" id="user-greeting">Selamat pagi,</div>
-          <div class="greet-name" id="user-name">Pelanggan 👋</div>
+      <!-- HEADER -->
+      <div class="header">
+        <div class="header-left">
+          <div class="avatar" id="user-avatar">R</div>
+          <div>
+            <div class="greet-sub" id="user-greeting">Selamat pagi,</div>
+            <div class="greet-name" id="user-name">Pelanggan 👋</div>
+          </div>
+        </div>
+        <div class="notif-btn">
+          <i class="ti ti-bell"></i>
+          <div class="notif-dot"></div>
         </div>
       </div>
-      <div class="notif-btn">
-        <i class="ti ti-bell"></i>
-        <div class="notif-dot"></div>
-      </div>
-    </div>
 
-    <!-- ACTIVE ORDER CARD -->
-    <div class="active-card" id="active-order" style="display:none">
-      <div class="ac-header">
-        <div class="ac-title">📦 Pesanan Aktif</div>
-        <div class="ac-id" id="ac-id">#LK-0000-0000</div>
-      </div>
-      <div class="ac-steps" id="ac-steps">
-        <div class="ac-step done">
-          <div class="ac-dot done"><i class="ti ti-check" style="font-size:14px"></i></div>
-          <div class="ac-step-lbl">Diambil</div>
+      <!-- ACTIVE ORDER CARD -->
+      <div class="active-card" id="active-order" style="display:none">
+        <div class="ac-header">
+          <div class="ac-title">📦 Pesanan Aktif</div>
+          <div class="ac-id" id="ac-id">#LK-0000-0000</div>
         </div>
-        <div class="ac-line done"></div>
-        <div class="ac-step current">
-          <div class="ac-dot current"><i class="ti ti-washing-machine" style="font-size:14px"></i></div>
-          <div class="ac-step-lbl">Dicuci</div>
+        <div class="ac-steps" id="ac-steps">
+          <div class="ac-step done">
+            <div class="ac-dot done"><i class="ti ti-check" style="font-size:14px"></i></div>
+            <div class="ac-step-lbl">Diambil</div>
+          </div>
+          <div class="ac-line done"></div>
+          <div class="ac-step current">
+            <div class="ac-dot current"><i class="ti ti-washing-machine" style="font-size:14px"></i></div>
+            <div class="ac-step-lbl">Dicuci</div>
+          </div>
+          <div class="ac-line"></div>
+          <div class="ac-step">
+            <div class="ac-dot"><i class="ti ti-wind" style="font-size:14px"></i></div>
+            <div class="ac-step-lbl">Selesai</div>
+          </div>
+          <div class="ac-line"></div>
+          <div class="ac-step">
+            <div class="ac-dot"><i class="ti ti-home" style="font-size:14px"></i></div>
+            <div class="ac-step-lbl">Diantar</div>
+          </div>
         </div>
-        <div class="ac-line"></div>
-        <div class="ac-step">
-          <div class="ac-dot"><i class="ti ti-wind" style="font-size:14px"></i></div>
-          <div class="ac-step-lbl">Selesai</div>
-        </div>
-        <div class="ac-line"></div>
-        <div class="ac-step">
-          <div class="ac-dot"><i class="ti ti-home" style="font-size:14px"></i></div>
-          <div class="ac-step-lbl">Diantar</div>
+        <div class="ac-footer">
+          <div class="ac-time" id="ac-status-text">⏱ Sedang dalam proses...</div>
+          <div class="ac-link">Detail →</div>
         </div>
       </div>
-      <div class="ac-footer">
-        <div class="ac-time" id="ac-status-text">⏱ Sedang dalam proses...</div>
-        <div class="ac-link">Detail →</div>
-      </div>
-    </div>
 
-    <!-- SERVICES -->
-    <div class="section-lbl">Layanan Kami</div>
-    <div class="svc-grid">
-      <div class="svc-card" onclick="openOrderModal('Reguler')">
-        <div class="svc-icon"><i class="ti ti-basket"></i></div>
-        <div class="svc-name">Cuci Reguler</div>
-        <div class="svc-price">Rp 5.000/kg</div>
+      <!-- SERVICES -->
+      <div class="section-lbl">Layanan Kami</div>
+      <div class="svc-grid">
+        <div class="svc-card" onclick="openOrderModal('Reguler')">
+          <div class="svc-icon"><i class="ti ti-basket"></i></div>
+          <div class="svc-name">Cuci Reguler</div>
+          <div class="svc-price">Rp 5.000/kg</div>
+        </div>
+        <div class="svc-card" onclick="openOrderModal('Ekspres')">
+          <div class="svc-icon"><i class="ti ti-bolt"></i></div>
+          <div class="svc-name">Express ⚡</div>
+          <div class="svc-price">Rp 8.000/kg</div>
+        </div>
+        <div class="svc-card" onclick="openOrderModal('Setrika')">
+          <div class="svc-icon"><i class="ti ti-hanger"></i></div>
+          <div class="svc-name">Setrika Only</div>
+          <div class="svc-price">Rp 3.000/kg</div>
+        </div>
+        <div class="svc-card" onclick="openOrderModal('Bundel')">
+          <div class="svc-icon"><i class="ti ti-package"></i></div>
+          <div class="svc-name">Bundel</div>
+          <div class="svc-price">Rp 60.000 flat</div>
+        </div>
       </div>
-      <div class="svc-card" onclick="openOrderModal('Ekspres')">
-        <div class="svc-icon"><i class="ti ti-bolt"></i></div>
-        <div class="svc-name">Express ⚡</div>
-        <div class="svc-price">Rp 8.000/kg</div>
-      </div>
-      <div class="svc-card" onclick="openOrderModal('Setrika')">
-        <div class="svc-icon"><i class="ti ti-hanger"></i></div>
-        <div class="svc-name">Setrika Only</div>
-        <div class="svc-price">Rp 3.000/kg</div>
-      </div>
-      <div class="svc-card" onclick="openOrderModal('Bundel')">
-        <div class="svc-icon"><i class="ti ti-package"></i></div>
-        <div class="svc-name">Bundel</div>
-        <div class="svc-price">Rp 60.000 flat</div>
-      </div>
-    </div>
 
-    <!-- PROMO -->
-    <div class="section-lbl">Promo & Info</div>
-    <div class="promo-row">
-      <div class="promo-card promo-1">
-        <div class="promo-badge">⚡ Hari ini</div>
-        <div class="promo-ttl">Gratis Antar-Jemput!</div>
-        <div class="promo-desc">Berlaku untuk semua layanan hari ini saja</div>
-        <div class="promo-cta">Klaim sekarang →</div>
+      <!-- PROMO -->
+      <div class="section-lbl">Promo & Info</div>
+      <div class="promo-row">
+        <div class="promo-card promo-1">
+          <div class="promo-badge">⚡ Hari ini</div>
+          <div class="promo-ttl">Gratis Antar-Jemput!</div>
+          <div class="promo-desc">Berlaku untuk semua layanan hari ini saja</div>
+          <div class="promo-cta">Klaim sekarang →</div>
+        </div>
+        <div class="promo-card promo-2">
+          <div class="promo-ttl">Ajak Teman 🎁</div>
+          <div class="promo-desc">Kamu + temanmu masing-masing dapat 100 pts gratis!</div>
+          <div class="promo-cta" style="color:#C084FC">Share link →</div>
+        </div>
       </div>
-      <div class="promo-card promo-2">
-        <div class="promo-ttl">Ajak Teman 🎁</div>
-        <div class="promo-desc">Kamu + temanmu masing-masing dapat 100 pts gratis!</div>
-        <div class="promo-cta" style="color:#C084FC">Share link →</div>
-      </div>
-    </div>
 
-    <!-- PUNCH CARD -->
-    <div class="section-lbl">Punch Card 🥊</div>
-    <div class="punch-card">
-      <div class="punch-head">
-        <div class="punch-title">Kartu Cuci</div>
-        <div class="punch-sub">7/10 — 3 lagi gratis!</div>
+      <!-- PUNCH CARD -->
+      <div class="section-lbl">Punch Card 🥊</div>
+      <div class="punch-card">
+        <div class="punch-head">
+          <div class="punch-title">Kartu Cuci</div>
+          <div class="punch-sub">7/10 — 3 lagi gratis!</div>
+        </div>
+        <div class="punch-dots">
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot done"><i class="ti ti-check"></i></div>
+          <div class="punch-dot"></div>
+          <div class="punch-dot"></div>
+          <div class="punch-dot prize"><i class="ti ti-gift" style="font-size:14px;color:var(--primary)"></i></div>
+        </div>
       </div>
-      <div class="punch-dots">
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot done"><i class="ti ti-check"></i></div>
-        <div class="punch-dot"></div>
-        <div class="punch-dot"></div>
-        <div class="punch-dot prize"><i class="ti ti-gift" style="font-size:14px;color:var(--primary)"></i></div>
-      </div>
-    </div>
 
-    <!-- HISTORY -->
-    <div class="section-lbl">Riwayat Pesanan <a>Lihat semua</a></div>
-    <div class="history-list" id="history-list">
-      <div class="empty-state" id="history-empty">
-        <i class="ti ti-receipt-off"></i>
-        <p>Belum ada riwayat pesanan</p>
+      <!-- HISTORY -->
+      <div class="section-lbl">Riwayat Pesanan <a>Lihat semua</a></div>
+      <div class="history-list" id="history-list">
+        <div class="empty-state" id="history-empty">
+          <i class="ti ti-receipt-off"></i>
+          <p>Belum ada riwayat pesanan</p>
+        </div>
       </div>
-    </div>
 
-  </div><!-- end scroll-body -->
+    </div><!-- end scroll-body -->
+  </div> <!-- end view-beranda -->
+
+  <!-- PESANANKU VIEW -->
+  <div id="view-pesananku" class="view-section">
+    <div class="section-lbl">Daftar Pesanan</div>
+    <div class="history-list" id="pesananku-list"></div>
+  </div> <!-- end view-pesananku -->
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-item active">
+    <button class="nav-item active" id="nav-beranda" onclick="switchView('beranda')">
       <i class="ti ti-home"></i><span>Beranda</span>
     </button>
     <button class="nav-item" onclick="openOrderModal('Reguler')">
       <i class="ti ti-plus"></i><span>Pesan</span>
     </button>
-    <button class="nav-item">
+    <button class="nav-item" id="nav-pesananku" onclick="switchView('pesananku')">
       <i class="ti ti-package"></i><span>Pesananku</span>
     </button>
     <button class="nav-item">
@@ -678,6 +687,16 @@ html, body {
 </div>
 
 <script>
+// ══════════════════════════════
+//  VIEW MANAGEMENT
+// ══════════════════════════════
+function switchView(viewId) {
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('nav-' + viewId)?.classList.add('active');
+}
+
 // ══════════════════════════════
 //  SPLASH
 // ══════════════════════════════
@@ -839,6 +858,48 @@ DB.listenOrders(orders => {
 
     // Animate steps
     const stepIdx = STATUS_STEP[active.status] || 0;
+    const hList = document.getElementById('history-list');
+    hList.innerHTML = '';
+    const pList = document.getElementById('pesananku-list');
+    if (pList) pList.innerHTML = '';
+
+    if (history.length === 0) {
+      hList.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
+    } else {
+      // Only show 3 latest in history-list
+      history.slice(0, 3).forEach(o => {
+        hList.innerHTML += `
+          <div class="h-card">
+            <div class="h-icon"><i class="ti ti-basket"></i></div>
+            <div class="h-info">
+              <div class="h-id">#${o.id}</div>
+              <div class="h-status">${o.status.toUpperCase()}</div>
+            </div>
+            <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+          </div>
+        `;
+      });
+    }
+
+    if (pList) {
+      const allOrders = orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if (allOrders.length === 0) {
+        pList.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
+      } else {
+        allOrders.forEach(o => {
+          pList.innerHTML += `
+            <div class="h-card" style="margin-bottom:12px;">
+              <div class="h-icon"><i class="ti ti-basket"></i></div>
+              <div class="h-info">
+                <div class="h-id">#${o.id}</div>
+                <div class="h-status">${o.status.toUpperCase()}</div>
+              </div>
+              <div class="h-price">Rp ${Number(o.totalPrice).toLocaleString('id-ID')}</div>
+            </div>
+          `;
+        });
+      }
+    }
     const dots = activeEl.querySelectorAll('.ac-dot');
     const lines = activeEl.querySelectorAll('.ac-line');
     dots.forEach((d, i) => {
