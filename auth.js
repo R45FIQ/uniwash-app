@@ -349,6 +349,8 @@ const AuthManager = (() => {
         storeName: extra.storeName || null,
         phone:     extra.phone     || null,
         location:  extra.location  || null,
+        lat:       extra.lat       || null,
+        lng:       extra.lng       || null,
         createdAt: new Date().toISOString(),
       };
 
@@ -379,6 +381,8 @@ const AuthManager = (() => {
       storeName: extra.storeName || null,
       phone:     extra.phone     || null,
       location:  extra.location  || null,
+      lat:       extra.lat       || null,
+      lng:       extra.lng       || null,
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
