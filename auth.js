@@ -348,6 +348,7 @@ const AuthManager = (() => {
         avatar:    _getInitials(name),
         storeName: extra.storeName || null,
         phone:     extra.phone     || null,
+        location:  extra.location  || null,
         createdAt: new Date().toISOString(),
       };
 
@@ -377,6 +378,7 @@ const AuthManager = (() => {
       avatar:    _getInitials(name),
       storeName: extra.storeName || null,
       phone:     extra.phone     || null,
+      location:  extra.location  || null,
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);

@@ -816,6 +816,15 @@ body::before {
           </div>
         </div>
 
+        <div class="form-group" id="reg-location-group" style="display: none;">
+          <label class="form-label" for="reg-location">Lokasi Laundry</label>
+          <div class="input-wrap">
+            <i class="ti ti-map-pin"></i>
+            <input type="text" class="form-input" id="reg-location"
+              placeholder="Alamat lengkap laundry">
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="reg-password">Password</label>
           <div class="input-wrap">
@@ -956,6 +965,19 @@ function selectRole(role) {
   document.getElementById('login-role-badge').innerHTML = badgeHTML;
   document.getElementById('register-role-badge').innerHTML = badgeHTML;
 
+  // Tampilkan field Lokasi Laundry khusus Mitra
+  const locGroup = document.getElementById('reg-location-group');
+  const locInput = document.getElementById('reg-location');
+  if (locGroup && locInput) {
+    if (role === 'partner') {
+      locGroup.style.display = 'block';
+      locInput.required = true;
+    } else {
+      locGroup.style.display = 'none';
+      locInput.required = false;
+      locInput.value = '';
+    }
+  }
 
   // Tampilkan tombol Google HANYA untuk Pelanggan
   const googleBtn = document.getElementById('btn-google-login');
@@ -1045,13 +1067,26 @@ function handleRegister(e) {
   const name     = document.getElementById('reg-name').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
+  const location = document.getElementById('reg-location') ? document.getElementById('reg-location').value.trim() : '';
   const btn      = document.getElementById('btn-submit-register');
+
+  const form = document.getElementById('register-form');
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  if (currentRole === 'partner' && !location) {
+    showMsg('register-error', 'Lokasi laundry wajib diisi untuk pendaftaran Mitra.');
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner-sm"></div> Mendaftarkan...';
 
   setTimeout(async () => {
-    const result = await AuthManager.register(name, email, password, currentRole);
+    const extra = currentRole === 'partner' ? { location } : {};
+    const result = await AuthManager.register(name, email, password, currentRole, extra);
     if (result.success) {
       showMsg('register-success', `✅ Akun berhasil dibuat! Silakan login dengan email ${email}.`);
       document.getElementById('register-form').reset();
